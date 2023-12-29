@@ -15,3 +15,7 @@ Cargo.lock
 
 # User settings, we can include this if jonathan starts using vs-code
 .vscode/
+
+# Local message + user data
+backend/users.json
+backend/messages.json
