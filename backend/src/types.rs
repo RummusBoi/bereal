@@ -9,7 +9,7 @@ use crate::AppData;
 #[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct Message {
     pub sender: String,
-    // receiver: String,
+    pub post_id: String,
     pub message: String,
     pub timestamp: u128,
     // read: bool,
