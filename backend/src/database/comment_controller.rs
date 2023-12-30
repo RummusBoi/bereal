@@ -1,5 +1,7 @@
 use sqlx::postgres::PgPoolOptions;
 
+use crate::general_helpers::ENV_VARS;
+
 use super::{
     helpers::{ensure_tables_exist, DATABASE_URL},
     types::comment::Comment,
@@ -7,18 +9,37 @@ use super::{
 
 fn get_mock_data() -> Vec<Comment> {
     return vec![
-        Comment::new("rasmus".to_string(), "hej".to_string()),
-        Comment::new("jonathan".to_string(), "hej2".to_string()),
-        Comment::new("darth vader".to_string(), "hej v3".to_string()),
+        Comment {
+            id: "1".to_string(),
+            timestamp: 0,
+            poster_id: "rasmus".to_string(),
+            data: "hej".to_string(),
+        }, //("rasmus".to_string(), "hej".to_string()),
+        Comment {
+            id: "2".to_string(),
+            timestamp: 1,
+            poster_id: "jonathan".to_string(),
+            data: "jeg er dum".to_string(),
+        },
+        Comment {
+            id: "3".to_string(),
+            timestamp: 2,
+            poster_id: "anakin".to_string(),
+            data: "hej gutter".to_string(),
+        },
     ];
 }
 
 pub fn read_comments(ids: Vec<String>) -> Vec<Comment> {
-    return get_mock_data()
-        .iter()
-        .filter(|comment| ids.contains(&comment.id))
-        .map(|comment| comment.clone())
-        .collect::<Vec<Comment>>();
+    if ENV_VARS.use_mocked_database {
+        return get_mock_data()
+            .iter()
+            .filter(|comment| ids.contains(&comment.id))
+            .map(|comment| comment.clone())
+            .collect::<Vec<Comment>>();
+    } else {
+        todo!("We need to implement the db behaviour here.")
+    }
 }
 
 pub async fn write_comment(post_id: &String, comment: &Comment) -> Result<(), sqlx::Error> {

@@ -6,5 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+dotenv = "0.15.0"
+lazy_static = "1.4.0"
 sqlx = { version = "0.7.3", features = ["postgres"] }
 uuid = { version = "1.6.1", features = ["v4"] }
