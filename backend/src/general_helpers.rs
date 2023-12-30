@@ -1,8 +1,8 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::env;
 
-pub fn get_timestamp() -> u128 {
-    return SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("wtf")
-        .as_millis();
+pub fn get_env_var(key: String) -> Option<String> {
+    env::vars()
+        .into_iter()
+        .find(|var| var.0 == key)
+        .and_then(|(var, val)| Some(val))
 }

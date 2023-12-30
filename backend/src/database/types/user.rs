@@ -1,4 +1,4 @@
-use crate::general_helpers::get_timestamp;
+use crate::database::helpers::get_timestamp;
 
 #[derive(Clone, Debug)]
 pub struct User {

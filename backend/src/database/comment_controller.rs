@@ -1,4 +1,9 @@
-use super::types::comment::Comment;
+use sqlx::postgres::PgPoolOptions;
+
+use super::{
+    helpers::{ensure_tables_exist, DATABASE_URL},
+    types::comment::Comment,
+};
 
 fn get_mock_data() -> Vec<Comment> {
     return vec![
@@ -14,4 +19,39 @@ pub fn read_comments(ids: Vec<String>) -> Vec<Comment> {
         .filter(|comment| ids.contains(&comment.id))
         .map(|comment| comment.clone())
         .collect::<Vec<Comment>>();
+}
+
+pub async fn write_comment(post_id: &String, comment: &Comment) -> Result<(), sqlx::Error> {
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(DATABASE_URL)
+        .await?;
+
+    ensure_tables_exist(&pool).await?;
+
+    sqlx::query(
+        format!(
+            "
+        insert into posts values (\'{}\', \'{}\');
+    ",
+            post_id, comment.id
+        )
+        .as_str(),
+    )
+    .execute(&pool)
+    .await?;
+
+    sqlx::query(
+        format!(
+            "
+        insert into comment values (\'{}\', \'{}\', \'{}\', \'{}\');
+    ",
+            comment.id, comment.data, comment.timestamp, comment.poster_id
+        )
+        .as_str(),
+    )
+    .execute(&pool)
+    .await?;
+
+    Ok(())
 }
