@@ -1,12 +1,7 @@
-mod db_helpers;
-mod types;
-
-use database::{
-    comments::read_comments, images::read_images, types::comment::Comment, users::read_users,
-};
+use crate::database::user_controller::read_users;
 
 mod database;
-
+mod general_helpers;
 fn main() {
     let users = read_users(vec!["rasmus".to_string(), "jonathan".to_string()]);
     println!("{users:?}");
