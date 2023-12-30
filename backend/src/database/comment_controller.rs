@@ -14,7 +14,7 @@ fn get_mock_data() -> Vec<Comment> {
             timestamp: 0,
             poster_id: "rasmus".to_string(),
             data: "hej".to_string(),
-        }, //("rasmus".to_string(), "hej".to_string()),
+        },
         Comment {
             id: "2".to_string(),
             timestamp: 1,
@@ -38,7 +38,7 @@ pub fn read_comments(ids: Vec<String>) -> Vec<Comment> {
             .map(|comment| comment.clone())
             .collect::<Vec<Comment>>();
     } else {
-        todo!("We need to implement the db behaviour here.")
+        todo!("Implement this part of the database interaction");
     }
 }
 
