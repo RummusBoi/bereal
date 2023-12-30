@@ -1,3 +1,6 @@
+mod db_helpers;
+mod types;
+
 use database::{
     comments::read_comments, images::read_images, types::comment::Comment, users::read_users,
 };

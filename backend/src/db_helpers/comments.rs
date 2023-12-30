@@ -1,4 +1,4 @@
-use crate::types::Message;
+use crate::types::Comment;
 use sqlx::{
     postgres::{PgPoolOptions, PgQueryResult},
     Pool, Postgres,
@@ -6,9 +6,7 @@ use sqlx::{
 
 const DATABASE_URL: &str = "postgresql://localhost/postgres";
 
-//Messages are written to a table with primary key post_id, and columns sender, timestamp, and
-//messaage.
-pub async fn write_message_to_database(message: &Message) -> Result<(), sqlx::Error> {
+pub async fn write_message_to_database(message: &Comment) -> Result<(), sqlx::Error> {
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(DATABASE_URL)
@@ -16,7 +14,6 @@ pub async fn write_message_to_database(message: &Message) -> Result<(), sqlx::Er
 
     ensure_tables_exist(&pool).await?;
 
-    // Now post the message to DB: first (post_id, message_id) to the posts table.
     let message_id = message.message.to_string()
         + message.post_id.as_str()
         + message.timestamp.to_string().as_str();
@@ -32,7 +29,6 @@ pub async fn write_message_to_database(message: &Message) -> Result<(), sqlx::Er
     .execute(&pool)
     .await?;
 
-    // Then post (message_id, message, timestamp, sender) to the messages table.
     sqlx::query(
         format!(
             "
@@ -48,7 +44,6 @@ pub async fn write_message_to_database(message: &Message) -> Result<(), sqlx::Er
     Ok(())
 }
 
-// Takes an sqlx connection pool to query through.
 pub async fn ensure_tables_exist(
     connection_pool: &Pool<Postgres>,
 ) -> Result<(PgQueryResult, PgQueryResult), sqlx::Error> {
