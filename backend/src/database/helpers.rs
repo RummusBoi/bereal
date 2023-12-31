@@ -2,6 +2,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use sqlx::{postgres::PgQueryResult, Pool, Postgres};
 
+use crate::general_helpers::ENV_VARS;
+
 pub fn get_timestamp() -> u128 {
     return SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -39,4 +41,12 @@ pub async fn ensure_tables_exist(
     .await?;
 
     Ok((posts_query_result, messages_query_result))
+}
+
+pub fn get_post_id_for_user(user_id: &String) -> String {
+    if ENV_VARS.use_mocked_database {
+        return format!("{user_id}-day-1");
+    } else {
+        todo!("Implement this")
+    }
 }
