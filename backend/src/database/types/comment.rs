@@ -1,8 +1,9 @@
+use serde::Serialize;
 use uuid::Uuid;
 
 use crate::database::helpers::get_timestamp;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 
 pub struct Comment {
     pub id: String,
