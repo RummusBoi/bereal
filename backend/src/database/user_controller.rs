@@ -1,3 +1,5 @@
+use crate::general_helpers::ENV_VARS;
+
 use super::types::user::User;
 
 fn get_mock_data() -> Vec<User> {
@@ -18,9 +20,13 @@ fn get_mock_data() -> Vec<User> {
 }
 
 pub fn read_users(ids: Vec<String>) -> Vec<User> {
-    return get_mock_data()
-        .iter()
-        .filter(|user| ids.contains(&user.id))
-        .map(|user| user.clone())
-        .collect::<Vec<User>>();
+    if ENV_VARS.use_mocked_database {
+        return get_mock_data()
+            .iter()
+            .filter(|user| ids.contains(&user.id))
+            .map(|user| user.clone())
+            .collect::<Vec<User>>();
+    } else {
+        todo!("Implement this part of the database interaction");
+    }
 }

@@ -1,17 +1,25 @@
-use super::types::image::Image;
+use crate::general_helpers::ENV_VARS;
 
-fn get_mock_data() -> Vec<Image> {
-    return vec![
-        Image::new("rasmus_img".to_string(), vec![5, 12, 13]),
-        Image::new("jonathan_img".to_string(), vec![1, 5, 12]),
-        Image::new("darth vader_img".to_string(), vec![12, 12, 15]),
-    ];
+use super::types::{image::Image, post::Post};
+
+fn get_mock_data() -> Vec<Post> {
+    return vec![Post {
+        id: "1".to_string(),
+        poster_id: "1".to_string(),
+        image: "1".to_string(),
+        comments: vec!["1".to_string(), "2".to_string()],
+        timestamp: 0,
+    }];
 }
 
-pub fn read_images(ids: Vec<String>, user_ids: Vec<String>) -> Vec<Image> {
-    return get_mock_data()
-        .iter()
-        .filter(|image| ids.contains(&image.id))
-        .map(|image| image.clone())
-        .collect::<Vec<Image>>();
+pub fn read_images(ids: Vec<String>) -> Vec<Post> {
+    if ENV_VARS.use_mocked_database {
+        return get_mock_data()
+            .iter()
+            .filter(|image| ids.contains(&image.id))
+            .map(|image| image.clone())
+            .collect::<Vec<Post>>();
+    } else {
+        todo!("Implement this part of the database interaction");
+    }
 }
