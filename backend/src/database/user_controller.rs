@@ -1,4 +1,4 @@
-use crate::{general_helpers::ENV_VARS, socket_handlers::types::AppError};
+use crate::general_helpers::ENV_VARS;
 
 use super::types::user::User;
 
@@ -19,18 +19,11 @@ fn get_mock_data() -> Vec<User> {
     ];
 }
 
-pub fn read_user(id: &String) -> Result<User, AppError> {
-    read_users(vec![id])
-        .first()
-        .and_then(|u| Some(u.clone()))
-        .ok_or(AppError::UserNotFound(id.clone()))
-}
-
-pub fn read_users(ids: Vec<&String>) -> Vec<User> {
+pub fn read_users(ids: Vec<String>) -> Vec<User> {
     if ENV_VARS.use_mocked_database {
         return get_mock_data()
             .iter()
-            .filter(|user| ids.contains(&&user.id))
+            .filter(|user| ids.contains(&user.id))
             .map(|user| user.clone())
             .collect::<Vec<User>>();
     } else {

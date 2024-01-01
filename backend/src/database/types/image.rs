@@ -1,9 +1,8 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use serde::Serialize;
 use uuid::Uuid;
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug)]
 pub struct Image {
     pub id: String,
     pub timestamp: u128,
