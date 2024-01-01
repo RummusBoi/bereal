@@ -12,7 +12,7 @@ fn get_mock_data() -> Vec<Post> {
     }];
 }
 
-pub fn read_posts(ids: Vec<String>) -> Vec<Post> {
+pub fn read_images(ids: Vec<String>) -> Vec<Post> {
     if ENV_VARS.use_mocked_database {
         return get_mock_data()
             .iter()
