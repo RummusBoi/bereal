@@ -22,13 +22,12 @@ fn get_mock_data() -> Vec<Image> {
     ];
 }
 
-pub fn read_images(ids: Vec<String>) -> Vec<Image> {
+pub fn read_images<'a>(ids: &'a Vec<String>) -> impl Iterator<Item = Image> + 'a {
     if ENV_VARS.use_mocked_database {
         return get_mock_data()
-            .iter()
+            .into_iter()
             .filter(|image| ids.contains(&image.id))
-            .map(|image| image.clone())
-            .collect::<Vec<Image>>();
+            .map(|image| image.clone());
     } else {
         todo!("Implement this part of the database interaction");
     }
