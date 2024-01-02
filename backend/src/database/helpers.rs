@@ -43,12 +43,12 @@ pub async fn ensure_tables_exist(
 
     let images_query_result = sqlx::query(
         r#"
-        create table if not exists images (
-            image_id text NOT NULL,
-            data text NOT NULL,
-            timestamp date NOT NULL
-        );
-    "#,
+            create table if not exists images (
+                image_id text NOT NULL,
+                data text NOT NULL,
+                timestamp date NOT NULL
+            );
+        "#,
     )
     .execute(connection_pool)
     .await?;

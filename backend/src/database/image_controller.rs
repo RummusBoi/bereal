@@ -42,16 +42,21 @@ pub async fn read_images(ids: Vec<String>) -> Result<Vec<Image>, sqlx::Error> {
 async fn read_images_from_db(ids: Vec<String>) -> Result<Vec<Image>, sqlx::Error> {
     let pool = PgPoolOptions::new().max_connections(5).connect(DATABASE_URL).await?;
 
-    let mut querybuilder_stub = QueryBuilder::new("select * from images where ");
-    let finalized_querybuilder = querybuilder_stub.push(ids.join(" or "));
+    let mut querybuilder_stub = QueryBuilder::new("select * from images where image_id =");
+    let finalized_querybuilder = querybuilder_stub.push(ids.join(" or image_id = "));
     let sql_query = finalized_querybuilder.build();
 
     let query_result = sql_query.fetch_all(&pool).await?;
 
-    Ok(query_result.iter().map(
-        // Issue: sqlx only supports up to 64 bit integers in the "get" method (else it complains
+    Ok(query_result.iter().filter_map(
+        // Issue: sqlx only supports ex. i64 (not u64) in the "get" method (else it complains
         // that trait bound is not satisfied)
-        |row| Image {id: row.get::<String, _>("id"), data: row.get::<Vec<u8>, _>("data"), timestamp: row.get::<i64, _>("timestamp") as u128}
+        |row| {
+            let id = row.try_get::<String, _>("id").ok()?;
+            let data = row.try_get::<Vec<u8>, _>("data").ok()?;
+            let timestamp: u128 = row.try_get::<i64, _>("timestamp").ok()?.try_into().ok()?;
+            Some(Image {id, data, timestamp})
+        }
     ).collect::<Vec<Image>>())
 }
 
