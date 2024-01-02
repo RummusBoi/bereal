@@ -43,9 +43,6 @@ fn fetch_initial_state(user_id: &String) -> Result<InitialState, AppError> {
     let user = read_user(user_id)?;
     let posts = read_posts_for_users(&user.friends).collect::<Vec<Post>>();
     let image_ids = &posts.map(|post| post.image.clone());
-    println!("{:?}", user.friends);
-    println!("{:?}", image_ids.clone());
-    println!("{:?}", posts.clone());
 
     let images: Vec<Image> = read_images(image_ids).collect();
 
