@@ -2,23 +2,33 @@ use serde::{Deserialize, Serialize};
 
 use crate::database::types::{comment::Comment, image::Image};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum SocketEventType {
     Error,
     InitialState,
 }
 
-#[derive(Serialize, Deserialize)]
-pub enum SocketData {}
+#[derive(Serialize, Deserialize, Debug)]
+pub enum SocketData {
+    InitialState(InitialState),
+    ErrorMessage(String),
+}
 
+#[derive(Debug)]
 pub enum AppError {
     UserNotFound(String),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct SocketResponse {
     pub data_type: SocketEventType,
     pub data: SocketData,
+}
+
+impl SocketResponse {
+    pub fn serialize_for_socket(&self) -> axum::extract::ws::Message {
+        return axum::extract::ws::Message::Text(serde_json::to_string(self).unwrap());
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -37,22 +47,7 @@ pub struct PostUserModel {
 // TYPES RELATED TO INITIAL STATE
 // ---
 
-// #[derive(Serialize, Clone)]
-// pub struct ImageDTO {
-//     id: String,
-//     timestamp: u128,
-//     data: Vec<u8>,
-// }
-
-// #[derive(Serialize, Clone)]
-// pub struct CommentDTO {
-//     id: String,
-//     timestamp: u128,
-//     poster_id: String,
-//     data: String,
-// }
-
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PostDTO {
     pub id: String,
     pub timestamp: u128,
@@ -60,7 +55,7 @@ pub struct PostDTO {
     pub comments: Vec<Comment>,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct InitialState {
     pub posts: Vec<PostDTO>,
 }
