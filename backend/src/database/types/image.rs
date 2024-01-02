@@ -5,8 +5,8 @@ use uuid::Uuid;
 #[derive(Clone, Debug)]
 pub struct Image {
     pub id: String,
-    pub timestamp: u128,
     pub data: Vec<u8>,
+    pub timestamp: u128,
 }
 
 impl Image {
