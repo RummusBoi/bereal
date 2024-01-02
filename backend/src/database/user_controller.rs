@@ -1,5 +1,3 @@
-use std::slice::Iter;
-
 use super::types::user::User;
 use crate::{general_helpers::ENV_VARS, socket_handlers::types::AppError};
 use std::iter::Iterator;
