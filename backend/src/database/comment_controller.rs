@@ -42,7 +42,7 @@ pub fn read_comments(ids: Vec<String>) -> Vec<Comment> {
     }
 }
 
-pub async fn write_comment(post_id: &String, comment: &Comment) -> Result<(), sqlx::Error> {
+pub async fn write_comment_to_db(post_id: &String, comment: &Comment) -> Result<(), sqlx::Error> {
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(DATABASE_URL)
@@ -52,10 +52,10 @@ pub async fn write_comment(post_id: &String, comment: &Comment) -> Result<(), sq
 
     sqlx::query(
         format!(
-            "
-        insert into posts values (\'{}\', \'{}\');
-    ",
-            post_id, comment.id
+            r#"
+                update posts set comment_ids = comment_ids || "{{'{}'}}" where post_id = {};
+            "#,
+            comment.id, post_id
         )
         .as_str(),
     )
@@ -65,8 +65,8 @@ pub async fn write_comment(post_id: &String, comment: &Comment) -> Result<(), sq
     sqlx::query(
         format!(
             "
-        insert into comment values (\'{}\', \'{}\', \'{}\', \'{}\');
-    ",
+                insert into comments values (\'{}\', \'{}\', \'{}\', \'{}\');
+            ",
             comment.id, comment.data, comment.timestamp, comment.poster_id
         )
         .as_str(),
