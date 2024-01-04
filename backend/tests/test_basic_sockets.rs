@@ -1,7 +1,7 @@
-use setup_socket_conn::connect_to_localhost;
-
 use backend::{self, socket_handlers::types::SocketResponse};
-mod setup_socket_conn;
+
+use crate::common::setup_socket_conn::connect_to_localhost;
+mod common;
 
 #[test]
 fn test_on_subscribe() {

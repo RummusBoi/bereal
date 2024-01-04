@@ -7,7 +7,7 @@ START_DB_STRING = "pg_ctl -D {folder} start"
 STOP_DB_STRING = "pg_ctl -D {folder} stop"
 STATUS_DB_STRING = "pg_ctl -D {folder} status"
 CARGO_RUN = "cargo run {switches}"
-CARGO_TEST = "cargo test"
+CARGO_TEST = "cargo test {switches}"
 
 
 class Error:
@@ -44,7 +44,7 @@ def build_and_run_project(build_for_release: bool = True) -> None:
 
 def build_and_run_int_tests() -> None:
     os.chdir("./backend")
-    os.system(CARGO_TEST)
+    os.system(CARGO_TEST.format(switches="--test '*'"))
     os.chdir("..")
 
 
