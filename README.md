@@ -23,3 +23,5 @@ If loading the env var fails for whatever reason, just panic. We don't want to b
 
 1: deploy project locally as described above
 2: run python3 -m scripts.run_integration_tests
+
+Note that this will ONLY run integration tests.
