@@ -1,5 +1,4 @@
-use crate::database::{comment_controller::read_comments, user_controller::read_users};
-use std::{fmt::Error, net::SocketAddr};
+use std::net::SocketAddr;
 
 use axum::{extract::WebSocketUpgrade, http::HeaderMap, response::Response, routing::get, Router};
 use socket_handlers::top_level_handler::top_level_socket_handler;
@@ -23,11 +22,6 @@ async fn handle_new_socket_conn(headers: HeaderMap, ws: WebSocketUpgrade) -> Res
 #[tokio::main]
 async fn main() {
     // let (sender, _) = broadcast::channel(100);
-    fn stuff() -> Option<u128> {
-        let res: u128 = (0 as i64).try_into().ok()?;
-        Some(res)
-    }
-    println!("{:?}", stuff());
     let websocket_server = Router::new().route("/websocket", get(handle_new_socket_conn));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 4500));
