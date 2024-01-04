@@ -29,3 +29,45 @@ fn get_env_value(key: &'static str, env_vars: &Vec<(String, String)>) -> Option<
         .find(|(k, _)| k == key)
         .and_then(|(_, v)| Some(v.clone()))
 }
+
+pub trait VectorTools<T>
+where
+    T: Clone,
+{
+    fn map<F, U>(&self, closure: F) -> Vec<U>
+    where
+        F: FnMut(&T) -> U;
+
+    fn find<F>(&self, closure: F) -> Option<&T>
+    where
+        F: Fn(&T) -> bool;
+    fn flat_map<F, U>(&self, closure: F) -> Vec<U>
+    where
+        F: FnMut(&T) -> Vec<U>;
+}
+
+impl<T> VectorTools<T> for Vec<T>
+where
+    T: Clone,
+{
+    fn map<F, U>(&self, closure: F) -> Vec<U>
+    where
+        F: FnMut(&T) -> U,
+    {
+        self.iter().map(closure).collect()
+    }
+
+    fn find<F>(&self, closure: F) -> Option<&T>
+    where
+        F: Fn(&T) -> bool,
+    {
+        self.iter().find(|elem| closure(elem))
+    }
+
+    fn flat_map<F, U>(&self, closure: F) -> Vec<U>
+    where
+        F: FnMut(&T) -> Vec<U>,
+    {
+        self.iter().flat_map(closure).collect()
+    }
+}
