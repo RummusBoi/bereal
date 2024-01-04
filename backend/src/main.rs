@@ -5,8 +5,6 @@ use axum::{extract::WebSocketUpgrade, http::HeaderMap, response::Response, routi
 use socket_handlers::top_level_handler::top_level_socket_handler;
 
 mod database;
-mod database;
-mod general_helpers;
 mod general_helpers;
 mod socket_handlers;
 
