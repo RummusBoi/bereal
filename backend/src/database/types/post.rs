@@ -8,7 +8,7 @@ pub struct Post {
     pub poster_id: String,
     pub image: String,
     pub comments: Vec<String>,
-    pub timestamp: u128,
+    pub timestamp: i64,
 }
 
 impl Post {
