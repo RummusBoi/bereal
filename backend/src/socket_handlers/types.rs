@@ -17,6 +17,7 @@ pub enum SocketData {
 #[derive(Debug)]
 pub enum AppError {
     UserNotFound(String),
+    DatabaseError(String),
 }
 
 #[derive(Serialize, Deserialize, Debug)]

@@ -1,9 +1,9 @@
-use sqlx::postgres::PgPoolOptions;
-
-use crate::general_helpers::ENV_VARS;
+use crate::{general_helpers::ENV_VARS, socket_handlers::types::AppError};
 
 use super::{
-    helpers::{ensure_tables_exist, DATABASE_URL},
+    sql_helpers::{
+        sql_array_append, sql_read_row, sql_write_row, DBColumn, PostColumn, SqlEntry, Table,
+    },
     types::comment::Comment,
 };
 
@@ -41,38 +41,37 @@ pub fn read_comments(ids: Vec<String>) -> Vec<Comment> {
         todo!("Implement this part of the database interaction");
     }
 }
+pub async fn write_comment(post_id: &String, comment: Comment) -> Result<(), AppError> {
+    let comment_id = comment.id.clone();
 
-pub async fn write_comment(post_id: &String, comment: &Comment) -> Result<(), sqlx::Error> {
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(DATABASE_URL)
-        .await?;
-
-    ensure_tables_exist(&pool).await?;
-
-    sqlx::query(
-        format!(
-            "
-        insert into posts values (\'{}\', \'{}\');
-    ",
-            post_id, comment.id
-        )
-        .as_str(),
+    sql_write_row(SqlEntry::Comment(comment)).await?;
+    sql_array_append(
+        post_id.clone(),
+        comment_id,
+        DBColumn::Posts(PostColumn::Comments),
     )
-    .execute(&pool)
     .await?;
-
-    sqlx::query(
-        format!(
-            "
-        insert into comment values (\'{}\', \'{}\', \'{}\', \'{}\');
-    ",
-            comment.id, comment.data, comment.timestamp, comment.poster_id
-        )
-        .as_str(),
-    )
-    .execute(&pool)
-    .await?;
-
     Ok(())
 }
+
+pub async fn read_comment(comment_id: &String) -> Result<Comment, AppError> {
+    sql_read_row(Table::Comments, comment_id).await
+}
+
+// pub async fn write_comment(post_id: &String, comment: &Comment) -> Result<(), sqlx::Error> {
+//     ensure_tables_exist(&pool).await?;
+
+//     sqlx::query(
+//         format!(
+//             "
+//         insert into posts values (\'{}\', \'{}\');
+//     ",
+//             post_id, comment.id
+//         )
+//         .as_str(),
+//     )
+//     .execute(&pool)
+//     .await?;
+
+//     Ok(())
+// }

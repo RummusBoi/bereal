@@ -12,3 +12,16 @@ get_env_value(...) with your env var key, and then optionally mapping it to the 
 
 Note on paniccing:
 If loading the env var fails for whatever reason, just panic. We don't want to be doing error handling in the case where our environment vars don't work.
+
+# How to deploy everything locally?
+
+1: cd into the bereal folder
+2: run python3 -m scripts.deploy_local
+3: press ctrl+c to tear down rust deployment again. SQL server will remain running
+
+# How to run integration tests?
+
+1: deploy project locally as described above
+2: run python3 -m scripts.run_integration_tests
+
+Note that this will ONLY run integration tests.

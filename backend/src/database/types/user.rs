@@ -4,7 +4,7 @@ use crate::database::helpers::get_timestamp;
 pub struct User {
     pub id: String,
     pub friends: Vec<String>,
-    pub timestamp: u128,
+    pub timestamp: i64,
 }
 
 impl User {

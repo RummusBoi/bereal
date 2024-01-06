@@ -2,6 +2,7 @@ use lazy_static::lazy_static;
 
 pub struct EnvironmentVars {
     pub use_mocked_database: bool,
+    pub database_url: String,
 }
 
 fn generate_env_vars() -> EnvironmentVars {
@@ -9,6 +10,7 @@ fn generate_env_vars() -> EnvironmentVars {
     let env_vars = read_env_vars();
     return EnvironmentVars {
         use_mocked_database: get_env_value("use_mocked_database", &env_vars).unwrap() == "true",
+        database_url: get_env_value("database_url", &env_vars).unwrap(),
     };
 }
 

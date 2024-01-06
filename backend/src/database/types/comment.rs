@@ -1,14 +1,14 @@
 use serde::{Deserialize, Serialize};
+use sqlx::prelude::FromRow;
 use uuid::Uuid;
 
 use crate::database::helpers::get_timestamp;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-
+#[derive(Clone, Debug, Serialize, Deserialize, FromRow)]
 pub struct Comment {
     pub id: String,
     pub poster_id: String,
-    pub timestamp: u128,
+    pub timestamp: i64,
     pub data: String,
 }
 
