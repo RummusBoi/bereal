@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::database::helpers::get_timestamp;
 
-#[derive(Clone, Debug, Serialize, Deserialize, FromRow)]
+#[derive(Clone, Debug, Serialize, Deserialize, Crud)]
 pub struct Comment {
     pub id: String,
     pub poster_id: String,
