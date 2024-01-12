@@ -1,23 +1,19 @@
-use std::borrow::Borrow;
-
 use axum::extract::ws::WebSocket;
 
-use crate::{
-    database::{
-        comment_controller::read_comments,
-        image_controller::read_images,
-        post_controller::read_posts_for_users,
-        types::{comment::Comment, image::Image, post::Post},
-        user_controller::read_user,
-    },
-    general_helpers::VectorTools,
+use crate::database::{
+    comment_controller::read_comments,
+    image_controller::read_images,
+    post_controller::read_posts_for_users,
+    sql_helpers::get_pool,
+    types::{comment::Comment, post::Post},
+    user_controller::read_user,
 };
 
 use super::types::{AppError, InitialState, PostDTO, SocketData, SocketEventType, SocketResponse};
 
-pub async fn on_subscribe(socket: &mut WebSocket, user_id: &String) {
+pub async fn on_subscribe(socket: &mut WebSocket, user_id: i32) {
     println!("Subscribed!");
-    let socket_resp = match fetch_initial_state(user_id) {
+    let socket_resp = match fetch_initial_state(user_id).await {
         Ok(initial_state) => SocketResponse {
             data_type: SocketEventType::InitialState,
             data: SocketData::InitialState(initial_state),
@@ -36,26 +32,56 @@ pub async fn on_subscribe(socket: &mut WebSocket, user_id: &String) {
     socket.send(socket_resp.serialize_for_socket()).await;
 }
 
-fn fetch_initial_state(user_id: &String) -> Result<InitialState, AppError> {
+async fn fetch_initial_state(user_id: i32) -> Result<InitialState, AppError> {
     /*
        Function used to fetch initial state from database. Will make multiple calls to construct an InitialState struct.
     */
-    let user = read_user(user_id)?;
-    let posts = read_posts_for_users(&user.friends).collect::<Vec<Post>>();
-    let image_ids = &posts.map(|post| post.image.clone());
+    let pool = get_pool().await;
+    // println!("Getting post.");
+    // match Post::by_user_id(&pool, 0).await {
+    //     Ok(a) => println!("Succeeded"),
+    //     Err(e) => println!("Failed, {:?}", e),
+    // }
 
-    let images: Vec<Image> = read_images(image_ids).collect();
+    println!("Getting user");
+    let asd = read_user(user_id).await;
+    let user = match asd {
+        Ok(u) => u,
+        Err(e) => {
+            println!("{:?}", e);
+            return Err(e);
+        }
+    };
+    println!("Got user");
 
-    let all_comments = read_comments(posts.flat_map(|post| post.comments.clone()));
-    let post_dtos = posts.map(|post| PostDTO {
-        id: post.id.clone(),
-        timestamp: post.timestamp,
-        image: images.find(|image| image.id == post.image).unwrap().clone(),
-        comments: get_comments_for_post(post, &all_comments)
+    let posts = read_posts_for_users(user.friends).await;
+    let image_ids = posts.iter().map(|post| post.image).collect();
+
+    let images = read_images(image_ids).await;
+
+    let all_comments = read_comments(
+        posts
             .iter()
-            .map(|comment| comment.clone().clone())
+            .flat_map(|post| post.comments.clone())
             .collect(),
-    });
+    )
+    .await?;
+    let post_dtos = posts
+        .iter()
+        .map(|post| PostDTO {
+            id: post.id.clone(),
+            timestamp: post.timestamp as u128,
+            image: images
+                .iter()
+                .find(|image| image.id == post.image)
+                .unwrap()
+                .clone(),
+            comments: get_comments_for_post(post, &all_comments)
+                .iter()
+                .map(|comment| comment.clone().clone())
+                .collect(),
+        })
+        .collect();
 
     Ok(InitialState { posts: post_dtos })
 }

@@ -1,0 +1,22 @@
+2024-01-12 19:15:36.020 CET [23904] LOG:  starting PostgreSQL 14.9 (Homebrew) on aarch64-apple-darwin22.4.0, compiled by Apple clang version 14.0.3 (clang-1403.0.22.14.1), 64-bit
+2024-01-12 19:15:36.022 CET [23904] LOG:  listening on IPv6 address "::1", port 5432
+2024-01-12 19:15:36.022 CET [23904] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2024-01-12 19:15:36.023 CET [23904] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+2024-01-12 19:15:36.035 CET [23905] LOG:  database system was shut down at 2024-01-12 19:15:21 CET
+2024-01-12 19:15:36.040 CET [23904] LOG:  database system is ready to accept connections
+2024-01-12 19:15:45.883 CET [24028] ERROR:  syntax error at or near "," at character 55
+2024-01-12 19:15:45.883 CET [24028] STATEMENT:  INSERT INTO "users" ("friends", "timestamp") VALUES (?, ?) RETURNING "users"."id", "users"."friends", "users"."timestamp"
+2024-01-12 19:34:32.118 CET [34515] ERROR:  syntax error at or near "," at character 55
+2024-01-12 19:34:32.118 CET [34515] STATEMENT:  INSERT INTO "users" ("friends", "timestamp") VALUES (?, ?) RETURNING "users"."id", "users"."friends", "users"."timestamp"
+2024-01-12 21:34:58.344 CET [37342] ERROR:  syntax error at or near "," at character 55
+2024-01-12 21:34:58.344 CET [37342] STATEMENT:  INSERT INTO "users" ("friends", "timestamp") VALUES (?, ?) RETURNING "users"."id", "users"."friends", "users"."timestamp"
+2024-01-12 21:35:58.661 CET [37718] ERROR:  syntax error at or near "," at character 55
+2024-01-12 21:35:58.661 CET [37718] STATEMENT:  INSERT INTO "users" ("friends", "timestamp") VALUES (?, ?) RETURNING "users"."id", "users"."friends", "users"."timestamp"
+2024-01-12 21:37:45.365 CET [37993] ERROR:  syntax error at or near "," at character 55
+2024-01-12 21:37:45.365 CET [37993] STATEMENT:  INSERT INTO "users" ("friends", "timestamp") VALUES (?, ?) RETURNING "users"."id", "users"."friends", "users"."timestamp"
+2024-01-12 21:43:43.894 CET [40396] ERROR:  syntax error at or near "," at character 55
+2024-01-12 21:43:43.894 CET [40396] STATEMENT:  INSERT INTO "users" ("friends", "timestamp") VALUES (?, ?) RETURNING "users"."id", "users"."friends", "users"."timestamp"
+2024-01-12 21:44:07.142 CET [40596] ERROR:  syntax error at or near "," at character 55
+2024-01-12 21:44:07.142 CET [40596] STATEMENT:  INSERT INTO "users" ("friends", "timestamp") VALUES (?, ?) RETURNING "users"."id", "users"."friends", "users"."timestamp"
+2024-01-12 21:44:30.137 CET [40694] ERROR:  syntax error at or near "," at character 55
+2024-01-12 21:44:30.137 CET [40694] STATEMENT:  INSERT INTO "users" ("friends", "timestamp") VALUES (?, ?) RETURNING "users"."id", "users"."friends", "users"."timestamp"

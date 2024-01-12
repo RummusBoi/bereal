@@ -1,9 +1,13 @@
 from scripts.helpers import (
-    DbStatus,
     build_and_run_project,
+)
+from scripts.postgres_helpers import (
+    DbStatus,
+    create_and_start_database,
     start_database,
     try_get_db_status,
 )
+
 
 default_folder = "./postgresql-databases/default-database"
 
@@ -16,8 +20,11 @@ db_status = try_get_db_status(default_folder)
 # --- Start database if not up
 # ---
 
-if db_status == DbStatus.Down or db_status == DbStatus.Nonexistent:
+if db_status == DbStatus.Down:
     start_database(default_folder)
+
+if db_status == DbStatus.Nonexistent:
+    create_and_start_database(default_folder)
 
 # ---
 # --- Build and run main project

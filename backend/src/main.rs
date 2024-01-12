@@ -1,6 +1,7 @@
 use std::net::SocketAddr;
 
 use axum::{extract::WebSocketUpgrade, http::HeaderMap, response::Response, routing::get, Router};
+use backend::database::sql_helpers::ensure_tables_exist;
 use socket_handlers::top_level_handler::top_level_socket_handler;
 
 mod database;
@@ -9,14 +10,14 @@ mod socket_handlers;
 
 async fn handle_new_socket_conn(headers: HeaderMap, ws: WebSocketUpgrade) -> Response {
     println!("Received new websocket connection.");
-    let user_id = "rasmus".to_string();
+    let user_id = 123;
     // let user_id = headers
     //     .get("user_id".to_string())
     //     .unwrap()
     //     .to_str()
     //     .unwrap()
     //     .to_string();
-    return ws.on_upgrade(|socket| top_level_socket_handler(socket, user_id));
+    return ws.on_upgrade(move |socket| top_level_socket_handler(socket, user_id));
 }
 
 #[tokio::main]

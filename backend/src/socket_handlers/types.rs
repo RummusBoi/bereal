@@ -50,7 +50,7 @@ pub struct PostUserModel {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PostDTO {
-    pub id: String,
+    pub id: i32,
     pub timestamp: u128,
     pub image: Image,
     pub comments: Vec<Comment>,

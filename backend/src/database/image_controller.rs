@@ -1,34 +1,62 @@
-use crate::general_helpers::ENV_VARS;
+use futures::future::join_all;
+use itertools::{Either, Itertools};
+use sqlx_crud::Crud;
 
-use super::types::image::Image;
+use crate::socket_handlers::types::AppError;
 
-fn get_mock_data() -> Vec<Image> {
-    return vec![
-        Image {
-            id: "1".to_string(),
-            timestamp: 0,
-            data: vec![0, 1, 2],
-        },
-        Image {
-            id: "2".to_string(),
-            timestamp: 1,
-            data: vec![0, 5, 10],
-        },
-        Image {
-            id: "3".to_string(),
-            timestamp: 2,
-            data: vec![10, 20, 30],
-        },
-    ];
+use super::{sql_helpers::get_pool, types::image::Image};
+
+pub async fn read_images(ids: Vec<i32>) -> Vec<Image> {
+    let pool = get_pool().await;
+    let results: Vec<Result<Option<Image>, AppError>> =
+        join_all(ids.iter().map(|id| Image::by_id(&pool, *id))).await;
+
+    // ---
+    // --- Map returned results into a Vector of succesfully retrieved images and one of errors.
+    // --- If for a given ID that image was not found in the DB, then an error will be appended to errors.
+    // ---
+
+    let (images, errors): (Vec<_>, Vec<_>) =
+        results
+            .into_iter()
+            .enumerate()
+            .partition_map(|(index, res)| match res {
+                Ok(c) => match c {
+                    Some(c) => Either::Left(c),
+                    None => Either::Right(AppError::DatabaseError(format!(
+                        "Comment with ID {:?} not found!",
+                        ids.get(index)
+                    ))),
+                },
+                Err(e) => Either::Right(AppError::DatabaseError(format!(
+                    "Failed when querying comment {:?}. {:?}",
+                    ids.get(index),
+                    e
+                ))),
+            });
+
+    // ---
+    // --- Log all errors. This includes errors for images that weren't found.
+    // ---
+
+    errors.iter().for_each(|error| println!("{:?}", error));
+
+    images
 }
 
-pub fn read_images<'a>(ids: &'a Vec<String>) -> impl Iterator<Item = Image> + 'a {
-    if ENV_VARS.use_mocked_database {
-        return get_mock_data()
-            .into_iter()
-            .filter(|image| ids.contains(&image.id))
-            .map(|image| image.clone());
-    } else {
-        todo!("Implement this part of the database interaction");
+pub async fn read_image(id: i32) -> Result<Image, AppError> {
+    let pool = get_pool().await;
+    match Image::by_id(&pool, id).await? {
+        Some(c) => Ok(c),
+        None => Err(AppError::DatabaseError(format!(
+            "Could not fetch image with ID {}",
+            id
+        ))),
     }
+}
+
+pub async fn write_image(image: Image) -> Result<(), AppError> {
+    let pool = get_pool().await;
+    image.create(&pool).await?;
+    Ok(())
 }

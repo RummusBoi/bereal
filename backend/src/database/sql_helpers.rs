@@ -1,88 +1,66 @@
-use std::collections::HashMap;
-
+use futures::future::join_all;
 use sqlx::{
-    postgres::{PgPoolOptions, PgRow},
-    query_as, Column, FromRow, Row, ValueRef,
+    postgres::{PgConnectOptions, PgPoolOptions, PgRow},
+    ConnectOptions, PgConnection, PgPool, Pool, Postgres,
 };
+
+use sqlx::prelude::FromRow;
+use sqlx_crud::{Crud, Schema, SqlxCrud};
 
 use crate::{general_helpers::ENV_VARS, socket_handlers::types::AppError};
 
-use super::types::{comment::Comment, post::Post};
+use super::types::{comment::Comment, image::Image, post::Post, user::User};
 
-pub async fn sql_array_append(
-    row_id: String,
-    value: String,
-    column: DBColumn,
-) -> Result<(), AppError> {
-    let (table, column_name) = column.into();
-
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(ENV_VARS.database_url.as_str())
-        .await?;
-    sqlx::query(
-        format!(
-            "
-            update {} set {} = array_append({}, {}) where id = {};
-            ",
-            table, column_name, column_name, value, row_id
-        )
-        .as_str(),
-    )
-    .execute(&pool)
-    .await?;
-
-    Ok(())
-}
-
-pub async fn sql_write_row(entry: SqlEntry) -> Result<(), AppError> {
-    let (table, data) = entry.into();
-
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(ENV_VARS.database_url.as_str())
-        .await?;
-    sqlx::query(
-        format!(
-            "
-            insert into {} values (\'{}\');
-            ",
-            table,
-            data.join("\', \'")
-        )
-        .as_str(),
-    )
-    .execute(&pool)
-    .await?;
-
-    Ok(())
-}
-
-pub async fn sql_read_row<T>(table: Table, id: &String) -> Result<T, AppError>
+async fn table_exists_with_columns(table: &str, columns: &[&str]) -> Result<bool, sqlx::Error>
 where
-    for<'a> T: FromRow<'a, PgRow> + Send + Unpin,
 {
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(ENV_VARS.database_url.as_str())
-        .await?;
+    let pool = get_pool().await;
+    let table_exists_query = format!("SELECT EXISTS (SELECT * FROM {});", table);
 
-    let row = sqlx::query_as::<_, T>(
-        format!(
-            "
-        select * from {} where id = {}
-        ",
-            table, id
-        )
-        .as_str(),
-    )
-    .fetch_one(&pool)
-    .await?;
+    let table_exists = match sqlx::query::<_>(&table_exists_query).fetch_one(&pool).await {
+        Ok(_) => Ok(true),
+        Err(e) => {
+            if e.to_string().contains("does not exist") {
+                Ok(false)
+            } else {
+                Err(e)
+            }
+        }
+    }?;
 
-    Ok(row)
+    if !table_exists {
+        return Ok(false);
+    }
 
-    // T::try_from(row).map_err(|err| err.into())
+    // fn gen_query(table: &String, column: &String) -> String {
+    //     return format!("COL_LENGTH ('{}', '{}')", table, column);
+    // }
+
+    // let results = columns.iter().all(|column| {
+    //     let query = gen_query(&table, column);
+    //     let column_length = sqlx::query_as::<_, i32>(&query).fetch_optional(&pool).await;
+    // });
+    Ok(true)
 }
+
+// pub async fn ensure_all_tables_correct() {
+//     let types: Vec<Crud> = vec![User, Comment, Image];
+//     let tables_exist: Vec<bool> = join_all(
+//         tables_columns
+//             .iter()
+//             .map(|(table, columns)| table_exists_with_columns(table, columns)),
+//     )
+//     .await
+//     .into_iter()
+//     // perform unwrap here. If we failed communication with just one of the tables, we want to crash immediately
+//     .map(|res| res.unwrap())
+//     .collect();
+//     tables_exist
+//         .iter()
+//         .enumerate()
+//         .for_each(|(index, table_exists)| if !table_exists {});
+//     println!("{:?}", results);
+// }
 
 pub async fn ensure_tables_exist() -> Result<(), AppError> {
     let pool = PgPoolOptions::new()
@@ -116,99 +94,17 @@ pub async fn ensure_tables_exist() -> Result<(), AppError> {
     Ok(())
 }
 
-#[derive(strum_macros::Display)]
-pub enum Table {
-    Comments,
-    Posts,
-}
-
-#[derive(strum_macros::Display)]
-pub enum CommentColumn {
-    Id,
-    Poster,
-}
-#[derive(strum_macros::Display)]
-pub enum PostColumn {
-    Comments,
-}
-
-pub enum DBColumn {
-    Comments(CommentColumn),
-    Posts(PostColumn),
-}
-
-pub enum SqlEntry {
-    Comment(Comment),
-    Post(Post),
-}
-
-pub enum SqlEntryArrayAppend {
-    CommentToPost(Comment),
-}
-
 impl From<sqlx::Error> for AppError {
     fn from(value: sqlx::Error) -> Self {
         AppError::DatabaseError(value.to_string())
     }
 }
-
-// macro_rules! unwrap {
-//     ($value:expr, $pattern:pat => $result:expr) => {
-//         match $value {
-//             E::VarA($pattern) => $result,
-//             E::VarB($pattern) => $result,
-//         }
-//     };
-// }
-
-impl From<DBColumn> for (Table, String) {
-    fn from(value: DBColumn) -> Self {
-        use DBColumn::*;
-
-        match value {
-            Comments(column) => match column {
-                CommentColumn::Id => (Table::Posts, format!("{}", CommentColumn::Poster)),
-                CommentColumn::Poster => todo!(),
-            },
-            Posts(column) => match column {
-                PostColumn::Comments => (Table::Posts, format!("{}", PostColumn::Comments)),
-            },
-        }
-    }
-}
-
-impl From<SqlEntry> for (Table, Vec<String>) {
-    fn from(value: SqlEntry) -> Self {
-        match value {
-            SqlEntry::Comment(comment) => (
-                Table::Comments,
-                vec![
-                    comment.id,
-                    comment.data,
-                    comment.timestamp.to_string(),
-                    comment.poster_id,
-                ],
-            ),
-            SqlEntry::Post(post) => (
-                Table::Posts,
-                vec![post.id, format!("{{{}}}", post.comments.join(","))],
-            ),
-        }
-    }
-}
-
-fn row_to_string(row: &PgRow) -> (String, String) {
-    let mut column_string = String::new();
-    let mut row_string = String::new();
-    for col in row.columns() {
-        let value = row.try_get_raw(col.ordinal()).unwrap();
-        let value = match value.is_null() {
-            true => "NULL".to_string(),
-            false => value.as_str().unwrap().to_string(),
-        };
-        column_string = column_string + (col.name());
-        row_string = row_string + value.as_str();
-    }
-
-    (column_string, row_string)
+pub async fn get_pool() -> PgPool {
+    let address = "postgres://localhost:5432";
+    println!("{}", address);
+    let options = PgConnectOptions::new()
+        .host("localhost")
+        .port(5432)
+        .database("postgres");
+    return PgPoolOptions::new().connect_with(options).await.unwrap();
 }

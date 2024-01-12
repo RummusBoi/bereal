@@ -10,10 +10,13 @@ dotenv = "0.15.0"
 lazy_static = "1.4.0"
 serde = "1.0.193"
 serde_json = "1.0.110"
-sqlx = { version = "0.7.3", features = ["postgres"] }
+sqlx = { version = "0.6", features = ["postgres", "sqlite"] }
 uuid = { version = "1.6.1", features = ["v4"] }
 tokio = { version = "1.35.1", features = ["full"] }
 axum = { version = "0.6.17", features = ["ws"] }
 tungstenite = { version = "0.21.0", features = ["native-tls"] }
 url = "2.5.0"
 strum_macros = "0.25.3"
+sqlx-crud = { version = "0.4.0", features = ["runtime-tokio-rustls"] }
+futures = "0.3.30"
+itertools = "0.12.0"
