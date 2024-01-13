@@ -20,7 +20,6 @@ fn test_on_subscribe() {
         tungstenite::Message::Frame(_) => todo!(),
     };
     println!("{:?}", socket_resp);
-    println!("Hvad så negere!");
 }
 
 #[test]
