@@ -1,5 +1,5 @@
 use futures::future::join_all;
-use sqlx_crud::Crud;
+use my_sqlx_crud::traits::Crud;
 
 use super::{
     sql_helpers::get_pool,

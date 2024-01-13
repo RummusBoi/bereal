@@ -1,12 +1,11 @@
 use crate::{database::helpers::get_timestamp, socket_handlers::types::AppError};
 use futures::TryStreamExt;
+use my_sqlx_crud::traits::Schema;
+use my_sqlx_crud_macro::SqlxCrud;
 use sqlx::{
     database::HasArguments, postgres::PgArguments, Arguments, Database, Encode, Executor, FromRow,
     Pool, Postgres,
 };
-use sqlx_crud::{Schema, SqlxCrud};
-use uuid::uuid;
-
 #[derive(Clone, Debug, FromRow, SqlxCrud, PartialEq)]
 #[database(Postgres)]
 pub struct Post {

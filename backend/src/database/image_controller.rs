@@ -1,6 +1,6 @@
 use futures::future::join_all;
 use itertools::{Either, Itertools};
-use sqlx_crud::Crud;
+use my_sqlx_crud::traits::Crud;
 
 use crate::socket_handlers::types::AppError;
 

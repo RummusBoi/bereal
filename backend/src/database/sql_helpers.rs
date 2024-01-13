@@ -1,11 +1,7 @@
-use futures::future::join_all;
 use sqlx::{
     postgres::{PgConnectOptions, PgPoolOptions, PgRow},
-    ConnectOptions, PgConnection, PgPool, Pool, Postgres,
+    PgPool, Postgres,
 };
-
-use sqlx::prelude::FromRow;
-use sqlx_crud::{Crud, Schema, SqlxCrud};
 
 use crate::{general_helpers::ENV_VARS, socket_handlers::types::AppError};
 

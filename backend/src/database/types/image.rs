@@ -1,7 +1,7 @@
+use my_sqlx_crud::traits::Schema;
+use my_sqlx_crud_macro::SqlxCrud;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Pool, Postgres};
-use sqlx_crud::Schema;
-use sqlx_crud::SqlxCrud;
 
 use crate::database::helpers::get_timestamp;
 use crate::socket_handlers::types::AppError;

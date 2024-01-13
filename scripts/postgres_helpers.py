@@ -13,6 +13,7 @@ class ColumnType(Enum):
     U8Vec = "bytea"
     I32Vec = "integer[]"
     Integer = "integer"
+    BigInteger = "bigint"
 
 
 class DbStatus(IntEnum):
@@ -27,7 +28,7 @@ table_columns = [
         [
             ("id", ColumnType.Integer),
             ("poster_id", ColumnType.Integer),
-            ("timestamp", ColumnType.Integer),
+            ("timestamp", ColumnType.BigInteger),
             ("data", ColumnType.VarChar),
         ],
     ),
@@ -35,7 +36,7 @@ table_columns = [
         "images",
         [
             ("id", ColumnType.Integer),
-            ("timestamp", ColumnType.Integer),
+            ("timestamp", ColumnType.BigInteger),
             ("data", ColumnType.U8Vec),
         ],
     ),
@@ -44,7 +45,7 @@ table_columns = [
         [
             ("id", ColumnType.Integer),
             ("friends", ColumnType.I32Vec),
-            ("timestamp", ColumnType.Integer),
+            ("timestamp", ColumnType.BigInteger),
         ],
     ),
     (
@@ -54,7 +55,7 @@ table_columns = [
             ("poster_id", ColumnType.Integer),
             ("image", ColumnType.Integer),
             ("comments", ColumnType.I32Vec),
-            ("timestamp", ColumnType.Integer),
+            ("timestamp", ColumnType.BigInteger),
         ],
     ),
 ]
@@ -70,6 +71,10 @@ def run_sql_command(command: str) -> None:
     exit_code = os.system(full_command)
     print(f"Exit code: {exit_code}")
     assert exit_code == 0
+
+
+def drop_table(table: str) -> None:
+    run_sql_command(f"'DROP table {table};'")
 
 
 def create_table(table: str, columns_types: list[(str, ColumnType)]) -> None:
@@ -105,6 +110,12 @@ def start_database(folder: str) -> None:
 def stop_database(folder: str) -> None:
     print("Stopping database...")
     os.system(STOP_DB_STRING.format(folder=folder))
+
+
+def drop_all_tables() -> None:
+    print("Dropping all tables...")
+    for table, _ in table_columns:
+        drop_table(table)
 
 
 def create_tables() -> None:

@@ -1,16 +1,13 @@
+use my_sqlx_crud_macro::SqlxCrud;
 use serde::{Deserialize, Serialize};
-
-use sqlx::FromRow;
-use sqlx::Pool;
-use sqlx::Postgres;
-use sqlx_crud::Schema;
-use sqlx_crud::SqlxCrud;
-use uuid::uuid;
 
 use crate::database::helpers::get_timestamp;
 use crate::socket_handlers::types::AppError;
+use my_sqlx_crud::traits::Schema;
+use sqlx::Pool;
+use sqlx::Postgres;
 
-#[derive(Serialize, Deserialize, Clone, Debug, FromRow, SqlxCrud, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, sqlx::FromRow, SqlxCrud, PartialEq)]
 #[database(Postgres)]
 pub struct Comment {
     pub id: i32,

@@ -7,9 +7,11 @@ use socket_handlers::top_level_handler::top_level_socket_handler;
 mod database;
 mod general_helpers;
 mod socket_handlers;
-
+extern crate my_sqlx_crud;
+extern crate my_sqlx_crud_macro;
 async fn handle_new_socket_conn(headers: HeaderMap, ws: WebSocketUpgrade) -> Response {
     println!("Received new websocket connection.");
+
     let user_id = 123;
     // let user_id = headers
     //     .get("user_id".to_string())

@@ -1,6 +1,6 @@
 use futures::future::join_all;
 use itertools::{Either, Itertools};
-use sqlx_crud::Crud;
+use my_sqlx_crud::traits::Crud;
 
 use super::{sql_helpers::get_pool, types::user::User};
 use crate::socket_handlers::types::AppError;
@@ -20,7 +20,7 @@ pub async fn read_user(id: i32) -> Result<User, AppError> {
 
 pub async fn read_users(ids: &Vec<i32>) -> Result<Vec<User>, AppError> {
     let pool = get_pool().await;
-    let results: Vec<Result<Option<User>, AppError>> =
+    let results: Vec<Result<Option<User>, sqlx::Error>> =
         join_all(ids.iter().map(|id| User::by_id(&pool, *id))).await;
 
     // ---
