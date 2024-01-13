@@ -31,3 +31,4 @@ postgresql-databases/
 # python stuff
 venv/
 scripts/__pycache__/
+logfile.txt
