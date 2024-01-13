@@ -21,5 +21,5 @@ def build_and_run_project(build_for_release: bool = True) -> None:
 
 def build_and_run_int_tests() -> None:
     os.chdir("./backend")
-    os.system(CARGO_TEST.format(switches="--test '*'"))
+    os.system(CARGO_TEST.format(switches="--test '*' -- --show-output"))
     os.chdir("..")

@@ -14,20 +14,6 @@ pub struct User {
 }
 
 impl User {
-    // pub async fn by_id(pool: &Pool<Postgres>, id: i32) -> Result<Option<User>, AppError> {
-    //     let query = format!("select * from {} where id = {}", Self::table_name(), id);
-
-    //     let result = sqlx::query_as::<_, Self>(query.as_str())
-    //         .fetch_optional(pool)
-    //         .await;
-
-    //     result.map_err(|error| {
-    //         AppError::DatabaseError(format!(
-    //             "Error when fetching user by id {}. {:?}",
-    //             id, error
-    //         ))
-    //     })
-    // }
     pub fn random() -> Self {
         User {
             id: uuid::Uuid::new_v4().to_u128_le() as i32,
@@ -36,15 +22,11 @@ impl User {
         }
     }
 
-    // pub async fn create() -> Self {
-    //     let query = format!(
-    //         r#"INSERT INTO users ("name") VALUES ({}) RETURNING "users"."user_id"#,
-    //         Self::table_name(),
-    //         id
-    //     );
-
-    //     let result = sqlx::query_as::<_, Self>(query.as_str())
-    //         .fetch_optional(pool)
-    //         .await;
-    // }
+    pub fn new(friends: Vec<i32>) -> Self {
+        User {
+            id: uuid::Uuid::new_v4().to_u128_le() as i32,
+            friends: friends,
+            timestamp: get_timestamp(),
+        }
+    }
 }

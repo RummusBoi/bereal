@@ -35,4 +35,11 @@ impl Image {
             data: vec![1, 2, 3],
         }
     }
+    pub fn new() -> Self {
+        Image {
+            id: uuid::Uuid::new_v4().to_u128_le() as i32,
+            timestamp: get_timestamp(),
+            data: vec![1, 2, 3],
+        }
+    }
 }

@@ -80,7 +80,7 @@ fn build_sql_queries(config: &Config) -> TokenStream2 {
         .collect::<Vec<_>>()
         .join(", ");
 
-    let mut update_sql_index = -1;
+    let mut update_sql_index = 0;
     let update_sql_binds = config
         .named
         .iter()

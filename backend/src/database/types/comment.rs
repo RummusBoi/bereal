@@ -38,4 +38,13 @@ impl Comment {
             data: "hejsa".to_string(),
         }
     }
+
+    pub fn new(poster_id: i32) -> Self {
+        Comment {
+            id: uuid::Uuid::new_v4().to_u128_le() as i32,
+            poster_id: poster_id,
+            timestamp: get_timestamp(),
+            data: "comment data!".to_string(),
+        }
+    }
 }

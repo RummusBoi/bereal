@@ -27,8 +27,8 @@ backend/messages.json
 
 # local databases
 postgresql-databases/
+logfile.txt
 
 # python stuff
 venv/
 scripts/__pycache__/
-logfile.txt

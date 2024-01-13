@@ -12,13 +12,15 @@ extern crate my_sqlx_crud_macro;
 async fn handle_new_socket_conn(headers: HeaderMap, ws: WebSocketUpgrade) -> Response {
     println!("Received new websocket connection.");
 
-    let user_id = 123;
-    // let user_id = headers
-    //     .get("user_id".to_string())
-    //     .unwrap()
-    //     .to_str()
-    //     .unwrap()
-    //     .to_string();
+    // let user_id = 123;
+    let user_id = headers
+        .get("user_id".to_string())
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string()
+        .parse::<i32>()
+        .unwrap();
     return ws.on_upgrade(move |socket| top_level_socket_handler(socket, user_id));
 }
 

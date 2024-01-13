@@ -2,7 +2,6 @@ use backend::database::{
     sql_helpers::get_pool,
     types::{comment::Comment, image::Image, post::Post, user::User},
 };
-use futures::executor::block_on;
 use my_sqlx_crud::traits::Crud;
 
 mod common;

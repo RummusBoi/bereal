@@ -83,4 +83,14 @@ impl Post {
             ],
         }
     }
+
+    pub fn new(poster_id: i32, image_id: i32, comment_ids: Vec<i32>) -> Self {
+        Post {
+            id: uuid::Uuid::new_v4().to_u128_le() as i32,
+            poster_id: poster_id,
+            timestamp: get_timestamp(),
+            image: image_id,
+            comments: comment_ids,
+        }
+    }
 }

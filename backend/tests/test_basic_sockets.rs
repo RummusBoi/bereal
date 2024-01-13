@@ -1,4 +1,5 @@
 use backend::{self, socket_handlers::types::SocketResponse};
+use common::setup_database::setup_database;
 
 use crate::common::setup_socket_conn::connect_to_localhost;
 mod common;
@@ -19,4 +20,12 @@ fn test_on_subscribe() {
         tungstenite::Message::Frame(_) => todo!(),
     };
     println!("{:?}", socket_resp);
+    println!("Hvad så negere!");
+}
+
+#[test]
+fn test_can_create_simple_friend_group() {
+    let posts = setup_database();
+
+    assert!(posts.len() == 6);
 }
