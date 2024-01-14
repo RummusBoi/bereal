@@ -1,12 +1,18 @@
-use std::borrow::Borrow;
-
 use backend::database::{
     sql_helpers::get_pool,
     types::{comment::Comment, image::Image, post::Post, user::User},
 };
 use my_sqlx_crud::traits::Crud;
 
-pub fn setup_database() -> Vec<Post> {
+pub struct DbState {
+    pub user: User,
+    pub friends: Vec<User>,
+    pub posts: Vec<Post>,
+    pub images: Vec<Image>,
+    pub comments: Vec<Comment>,
+}
+
+pub fn create_simple_friendgroup() -> DbState {
     /*
        Sets up the database with the following:
        A User with 5 friends.
@@ -59,7 +65,9 @@ pub fn setup_database() -> Vec<Post> {
     // Aggregate all posts in the mutable all_posts Vec.
     // ---
 
-    let mut all_posts: Vec<Post> = Vec::new();
+    let mut friend_posts: Vec<Post> = Vec::new();
+    let mut friend_images: Vec<Image> = Vec::new();
+    let mut friend_comments: Vec<Comment> = Vec::new();
 
     for friend in friends.iter() {
         let image = rt.block_on(Image::new().create(&pool)).unwrap();
@@ -73,7 +81,9 @@ pub fn setup_database() -> Vec<Post> {
             )
             .unwrap();
 
-        all_posts.push(post);
+        friend_posts.push(post);
+        friend_images.push(image);
+        friend_comments.extend(comments);
     }
 
     // ---
@@ -98,7 +108,11 @@ pub fn setup_database() -> Vec<Post> {
         )
         .unwrap();
 
-    all_posts.push(user_post);
-
-    return all_posts;
+    DbState {
+        user: user,
+        friends: friends,
+        posts: [vec![user_post], friend_posts].concat(),
+        images: [vec![user_image], friend_images].concat(),
+        comments: friend_comments,
+    }
 }

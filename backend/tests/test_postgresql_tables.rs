@@ -4,6 +4,8 @@ use backend::database::{
 };
 use my_sqlx_crud::traits::Crud;
 
+use crate::common::setup_database::create_simple_friendgroup;
+
 mod common;
 #[test]
 fn test_user_table() {
@@ -61,4 +63,11 @@ fn test_post_table() {
         .unwrap();
 
     assert!(created_obj == fetched_obj);
+}
+
+#[test]
+fn test_can_create_simple_friend_group() {
+    let db_state = create_simple_friendgroup();
+
+    assert!(db_state.posts.len() == 6);
 }

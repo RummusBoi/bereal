@@ -22,9 +22,7 @@ pub async fn on_subscribe(socket: &mut WebSocket, user_id: i32) {
             println!("{:?}", error);
             SocketResponse {
                 data_type: SocketEventType::Error,
-                data: SocketData::ErrorMessage(format!(
-                    "Failed when fetching posts. Try again later."
-                )),
+                data: SocketData::String(format!("Failed when fetching posts. Try again later.")),
             }
         }
     };
@@ -54,7 +52,7 @@ async fn fetch_initial_state(user_id: i32) -> Result<InitialState, AppError> {
     };
     println!("Got user");
 
-    let posts = read_posts_for_users(user.friends).await;
+    let posts = read_posts_for_users([user.friends, vec![user.id]].concat()).await;
     let image_ids = posts.iter().map(|post| post.image).collect();
 
     let images = read_images(image_ids).await;
@@ -70,6 +68,7 @@ async fn fetch_initial_state(user_id: i32) -> Result<InitialState, AppError> {
         .iter()
         .map(|post| PostDTO {
             id: post.id.clone(),
+            poster_id: post.poster_id.clone(),
             timestamp: post.timestamp as u128,
             image: images
                 .iter()
@@ -78,7 +77,7 @@ async fn fetch_initial_state(user_id: i32) -> Result<InitialState, AppError> {
                 .clone(),
             comments: get_comments_for_post(post, &all_comments)
                 .iter()
-                .map(|comment| comment.clone().clone())
+                .map(|&comment| comment.clone())
                 .collect(),
         })
         .collect();
