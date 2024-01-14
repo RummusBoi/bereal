@@ -6,6 +6,9 @@ CARGO_RUN = "cargo run {switches}"
 CARGO_TEST = "cargo test {switches}"
 
 
+ENABLE_LOGGING = True
+
+
 class Error:
     def __init__(self, message: str):
         self.message = message
@@ -21,5 +24,8 @@ def build_and_run_project(build_for_release: bool = True) -> None:
 
 def build_and_run_int_tests() -> None:
     os.chdir("./backend")
-    os.system(CARGO_TEST.format(switches="--test '*' -- --show-output"))
+    switches = "--test '*' "
+    if ENABLE_LOGGING:
+        switches += "-- --nocapture"
+    os.system(CARGO_TEST.format(switches=switches))
     os.chdir("..")

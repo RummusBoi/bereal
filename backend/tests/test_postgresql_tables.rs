@@ -7,67 +7,54 @@ use my_sqlx_crud::traits::Crud;
 use crate::common::setup_database::create_simple_friendgroup;
 
 mod common;
-#[test]
-fn test_user_table() {
-    let rt = tokio::runtime::Runtime::new().unwrap();
+#[tokio_shared_rt::test(shared)]
 
-    let pool = rt.block_on(get_pool());
+async fn test_user_table() {
+    let pool = get_pool().await;
     let random_user = User::random();
     println!("{:?}", random_user);
-    let created_post = rt.block_on(random_user.create(&pool)).unwrap();
-    let fetched_post = rt
-        .block_on(User::by_id(&pool, created_post.id))
-        .unwrap()
-        .unwrap();
+    let created_post = random_user.create(&pool).await.unwrap();
+    let fetched_post = User::by_id(&pool, created_post.id).await.unwrap().unwrap();
 
     assert!(created_post == fetched_post);
 }
 
-#[test]
-fn test_comment_table() {
-    let rt = tokio::runtime::Runtime::new().unwrap();
-    let pool = rt.block_on(get_pool());
+#[tokio_shared_rt::test(shared)]
+async fn test_comment_table() {
+    let pool = get_pool().await;
 
-    let created_obj = rt.block_on(Comment::random().create(&pool)).unwrap();
-    let fetched_obj = rt
-        .block_on(Comment::by_id(&pool, created_obj.id))
+    let created_obj = Comment::random().create(&pool).await.unwrap();
+    let fetched_obj = Comment::by_id(&pool, created_obj.id)
+        .await
         .unwrap()
         .unwrap();
 
     assert!(created_obj == fetched_obj);
 }
 
-#[test]
-fn test_image_table() {
-    let rt = tokio::runtime::Runtime::new().unwrap();
-    let pool = rt.block_on(get_pool());
+#[tokio_shared_rt::test(shared)]
+async fn test_image_table() {
+    let pool = get_pool().await;
 
-    let created_obj = rt.block_on(Image::random().create(&pool)).unwrap();
-    let fetched_obj = rt
-        .block_on(Image::by_id(&pool, created_obj.id))
-        .unwrap()
-        .unwrap();
+    let created_obj = Image::random().create(&pool).await.unwrap();
+    let fetched_obj = Image::by_id(&pool, created_obj.id).await.unwrap().unwrap();
 
     assert!(created_obj == fetched_obj);
 }
 
-#[test]
-fn test_post_table() {
-    let rt = tokio::runtime::Runtime::new().unwrap();
-    let pool = rt.block_on(get_pool());
+#[tokio_shared_rt::test(shared)]
+async fn test_post_table() {
+    let pool = get_pool().await;
 
-    let created_obj = rt.block_on(Post::random().create(&pool)).unwrap();
-    let fetched_obj = rt
-        .block_on(Post::by_id(&pool, created_obj.id))
-        .unwrap()
-        .unwrap();
+    let created_obj = Post::random().create(&pool).await.unwrap();
+    let fetched_obj = Post::by_id(&pool, created_obj.id).await.unwrap().unwrap();
 
     assert!(created_obj == fetched_obj);
 }
 
-#[test]
-fn test_can_create_simple_friend_group() {
-    let db_state = create_simple_friendgroup();
+#[tokio_shared_rt::test(shared)]
+async fn test_can_create_simple_friend_group() {
+    let db_state = create_simple_friendgroup().await;
 
     assert!(db_state.posts.len() == 6);
 }

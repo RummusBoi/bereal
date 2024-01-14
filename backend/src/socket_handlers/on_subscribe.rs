@@ -1,17 +1,17 @@
-use axum::extract::ws::WebSocket;
+use axum::extract::ws::{Message, WebSocket};
+use futures::{stream::SplitSink, SinkExt};
 
 use crate::database::{
     comment_controller::read_comments,
     image_controller::read_images,
     post_controller::read_posts_for_users,
-    sql_helpers::get_pool,
     types::{comment::Comment, post::Post},
     user_controller::read_user,
 };
 
 use super::types::{AppError, InitialState, PostDTO, SocketData, SocketEventType, SocketResponse};
 
-pub async fn on_subscribe(socket: &mut WebSocket, user_id: i32) {
+pub async fn on_subscribe(client_sender: &mut SplitSink<WebSocket, Message>, user_id: i32) {
     println!("Subscribed!");
     let socket_resp = match fetch_initial_state(user_id).await {
         Ok(initial_state) => SocketResponse {
@@ -27,21 +27,14 @@ pub async fn on_subscribe(socket: &mut WebSocket, user_id: i32) {
         }
     };
     println!("Sending data {:?}", socket_resp);
-    socket.send(socket_resp.serialize_for_socket()).await;
+    client_sender.send(socket_resp.serialize_for_socket()).await;
 }
 
 async fn fetch_initial_state(user_id: i32) -> Result<InitialState, AppError> {
     /*
        Function used to fetch initial state from database. Will make multiple calls to construct an InitialState struct.
     */
-    let pool = get_pool().await;
-    // println!("Getting post.");
-    // match Post::by_user_id(&pool, 0).await {
-    //     Ok(a) => println!("Succeeded"),
-    //     Err(e) => println!("Failed, {:?}", e),
-    // }
 
-    println!("Getting user");
     let asd = read_user(user_id).await;
     let user = match asd {
         Ok(u) => u,
@@ -50,7 +43,6 @@ async fn fetch_initial_state(user_id: i32) -> Result<InitialState, AppError> {
             return Err(e);
         }
     };
-    println!("Got user");
 
     let posts = read_posts_for_users([user.friends, vec![user.id]].concat()).await;
     let image_ids = posts.iter().map(|post| post.image).collect();

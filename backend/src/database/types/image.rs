@@ -14,20 +14,6 @@ pub struct Image {
     pub data: Vec<u8>,
 }
 impl Image {
-    pub async fn by_id(pool: &Pool<Postgres>, id: i32) -> Result<Option<Image>, AppError> {
-        let query = format!("select * from {} where id = {}", Self::table_name(), id);
-
-        let result = sqlx::query_as::<_, Self>(query.as_str())
-            .fetch_optional(pool)
-            .await;
-
-        result.map_err(|error| {
-            AppError::DatabaseError(format!(
-                "Error when fetching image by id {}. {:?}",
-                id, error
-            ))
-        })
-    }
     pub fn random() -> Self {
         Image {
             id: uuid::Uuid::new_v4().to_u128_le() as i32,
@@ -35,11 +21,13 @@ impl Image {
             data: vec![1, 2, 3],
         }
     }
-    pub fn new() -> Self {
-        Image {
+    pub fn new(data: Vec<u8>) -> Self {
+        let image = Image {
             id: uuid::Uuid::new_v4().to_u128_le() as i32,
             timestamp: get_timestamp(),
-            data: vec![1, 2, 3],
-        }
+            data: data,
+        };
+        println!("Created {:?}", image);
+        image
     }
 }

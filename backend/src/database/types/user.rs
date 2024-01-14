@@ -23,10 +23,13 @@ impl User {
     }
 
     pub fn new(friends: Vec<i32>) -> Self {
-        User {
+        let user = User {
             id: uuid::Uuid::new_v4().to_u128_le() as i32,
             friends: friends,
             timestamp: get_timestamp(),
-        }
+        };
+
+        println!("Created {:?}", user);
+        user
     }
 }

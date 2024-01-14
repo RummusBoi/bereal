@@ -1,18 +1,23 @@
+use crate::database::types::post::Post;
+use crate::database::types::{comment::Comment, image::Image};
+use enum_as_inner::EnumAsInner;
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
-
-use crate::database::types::{comment::Comment, image::Image};
 
 #[derive(Serialize, Deserialize, Debug, Display)]
 pub enum SocketEventType {
     Error,
     InitialState,
+    PostCreated,
 }
 
-#[derive(Serialize, Deserialize, Debug, Display)]
+#[derive(Serialize, Deserialize, Debug, Display, EnumAsInner)]
 pub enum SocketData {
     InitialState(InitialState),
     String(String),
+    CreatePostDTO(CreatePostDTO),
+    PostDTO(PostDTO),
+    Post(Post),
 }
 
 impl TryFrom<SocketResponse> for InitialState {
@@ -56,12 +61,20 @@ impl SocketResponse {
     pub fn serialize_for_socket(&self) -> axum::extract::ws::Message {
         return axum::extract::ws::Message::Text(serde_json::to_string(self).unwrap());
     }
+    pub fn serialize_for_tung_socket(&self) -> tungstenite::Message {
+        return tungstenite::Message::Text(serde_json::to_string(self).unwrap());
+    }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct PostMessageModel {
-    // receiver: String,
-    pub message: String,
+impl From<axum::extract::ws::Message> for SocketResponse {
+    fn from(value: axum::extract::ws::Message) -> Self {
+        return match value {
+            axum::extract::ws::Message::Text(data) => {
+                serde_json::from_slice::<SocketResponse>(data.as_bytes()).unwrap()
+            }
+            _ => panic!("Received invalid socket response."),
+        };
+    }
 }
 
 #[derive(Deserialize)]
@@ -81,6 +94,16 @@ pub struct PostDTO {
     pub timestamp: u128,
     pub image: Image,
     pub comments: Vec<Comment>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CreatePostDTO {
+    pub image: CreateImageDTO,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CreateImageDTO {
+    pub data: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

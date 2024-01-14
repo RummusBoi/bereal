@@ -1,7 +1,10 @@
+use std::time::Duration;
+
 use sqlx::{
     postgres::{PgConnectOptions, PgPoolOptions, PgRow},
     PgPool, Postgres,
 };
+use tokio::sync::OnceCell;
 
 use crate::{general_helpers::ENV_VARS, socket_handlers::types::AppError};
 
@@ -28,66 +31,7 @@ where
         return Ok(false);
     }
 
-    // fn gen_query(table: &String, column: &String) -> String {
-    //     return format!("COL_LENGTH ('{}', '{}')", table, column);
-    // }
-
-    // let results = columns.iter().all(|column| {
-    //     let query = gen_query(&table, column);
-    //     let column_length = sqlx::query_as::<_, i32>(&query).fetch_optional(&pool).await;
-    // });
     Ok(true)
-}
-
-// pub async fn ensure_all_tables_correct() {
-//     let types: Vec<Crud> = vec![User, Comment, Image];
-//     let tables_exist: Vec<bool> = join_all(
-//         tables_columns
-//             .iter()
-//             .map(|(table, columns)| table_exists_with_columns(table, columns)),
-//     )
-//     .await
-//     .into_iter()
-//     // perform unwrap here. If we failed communication with just one of the tables, we want to crash immediately
-//     .map(|res| res.unwrap())
-//     .collect();
-//     tables_exist
-//         .iter()
-//         .enumerate()
-//         .for_each(|(index, table_exists)| if !table_exists {});
-//     println!("{:?}", results);
-// }
-
-pub async fn ensure_tables_exist() -> Result<(), AppError> {
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(ENV_VARS.database_url.as_str())
-        .await?;
-    sqlx::query(
-        r#"
-        create table if not exists posts (
-            post_id varchar(255) PRIMARY KEY,
-            message_id varchar(255) NOT NULL UNIQUE
-        );
-    "#,
-    )
-    .execute(&pool)
-    .await?;
-
-    sqlx::query(
-        r#"
-        create table if not exists messages (
-            message_id varchar(255) PRIMARY KEY,
-            message varchar(255) NOT NULL,
-            timestamp date NOT NULL,
-            sender varchar(255) NOT NULL
-        );
-    "#,
-    )
-    .execute(&pool)
-    .await?;
-
-    Ok(())
 }
 
 impl From<sqlx::Error> for AppError {
@@ -95,12 +39,28 @@ impl From<sqlx::Error> for AppError {
         AppError::DatabaseError(value.to_string())
     }
 }
+
 pub async fn get_pool() -> PgPool {
-    let address = "postgres://localhost:5432";
-    println!("{}", address);
-    let options = PgConnectOptions::new()
-        .host("localhost")
-        .port(5432)
-        .database("postgres");
-    return PgPoolOptions::new().connect_with(options).await.unwrap();
+    let id = uuid::Uuid::new_v4();
+    println!("Acquiring pool... {}", id);
+    let pool = POOL
+        .get_or_init(|| async {
+            println!("Inside the body :O... {}", id);
+            let options = PgConnectOptions::new()
+                .host("localhost")
+                .port(5432)
+                .database("postgres");
+            PgPoolOptions::new()
+                .max_connections(1024)
+                // .max_lifetime(Duration::from_secs(1))
+                .connect_with(options)
+                .await
+                .expect("asd")
+        })
+        .await
+        .clone();
+    println!("Acquired pool... {}", id);
+    return pool;
 }
+
+static POOL: OnceCell<PgPool> = OnceCell::const_new();

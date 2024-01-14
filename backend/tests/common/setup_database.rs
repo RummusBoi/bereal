@@ -2,6 +2,7 @@ use backend::database::{
     sql_helpers::get_pool,
     types::{comment::Comment, image::Image, post::Post, user::User},
 };
+use futures::future::join_all;
 use my_sqlx_crud::traits::Crud;
 
 pub struct DbState {
@@ -12,7 +13,7 @@ pub struct DbState {
     pub comments: Vec<Comment>,
 }
 
-pub fn create_simple_friendgroup() -> DbState {
+pub async fn create_simple_friendgroup() -> DbState {
     /*
        Sets up the database with the following:
        A User with 5 friends.
@@ -24,41 +25,40 @@ pub fn create_simple_friendgroup() -> DbState {
     let friend_count = 5;
     let comments_per_post = 3;
 
-    let rt = tokio::runtime::Runtime::new().unwrap();
-
-    let pool = rt.block_on(get_pool());
-
     // ---
     // Create friends
     // ---
 
-    let mut friends: Vec<User> = (0..friend_count)
-        .map(|_| rt.block_on(User::new(vec![]).create(&pool)).unwrap())
-        .collect();
+    let pool = get_pool().await;
+    let mut friends: Vec<User> =
+        join_all((0..friend_count).map(|_| User::new(vec![]).create(&pool)))
+            .await
+            .into_iter()
+            .map(|f| f.unwrap())
+            .collect();
 
     // ---
     // Create user
     // ---
 
-    let user = rt
-        .block_on(User::new(friends.iter().map(|f| f.id).collect()).create(&pool))
+    let user = User::new(friends.iter().map(|f| f.id).collect())
+        .create(&pool)
+        .await
         .unwrap();
 
     // ---
     // Add user to friendlists of all the other users
     // ---
 
-    friends = friends
-        .iter()
-        .map(|f| {
-            let friend_mutated = User {
-                id: f.id,
-                friends: vec![user.id],
-                timestamp: f.timestamp,
-            };
-            return rt.block_on(friend_mutated.update(&pool)).unwrap();
-        })
-        .collect();
+    friends = join_all(friends.iter().map(|f| async {
+        let friend_mutated = User {
+            id: f.id,
+            friends: vec![user.id],
+            timestamp: f.timestamp,
+        };
+        return friend_mutated.update(&pool).await.unwrap();
+    }))
+    .await;
 
     // ---
     // For each friend create their image, comments, and post.
@@ -70,15 +70,15 @@ pub fn create_simple_friendgroup() -> DbState {
     let mut friend_comments: Vec<Comment> = Vec::new();
 
     for friend in friends.iter() {
-        let image = rt.block_on(Image::new().create(&pool)).unwrap();
-        let comments: Vec<Comment> = (0..comments_per_post)
-            .map(|_| rt.block_on(Comment::new(friend.id).create(&pool)).unwrap())
-            .collect();
-        let post = rt
-            .block_on(
-                Post::new(friend.id, image.id, comments.iter().map(|c| c.id).collect())
-                    .create(&pool),
-            )
+        let image = Image::new(vec![1, 2, 3]).create(&pool).await.unwrap();
+        let comments: Vec<Comment> = join_all(
+            (0..comments_per_post)
+                .map(|_| async { Comment::new(friend.id).create(&pool).await.unwrap() }),
+        )
+        .await;
+        let post = Post::new(friend.id, image.id, comments.iter().map(|c| c.id).collect())
+            .create(&pool)
+            .await
             .unwrap();
 
         friend_posts.push(post);
@@ -91,22 +91,22 @@ pub fn create_simple_friendgroup() -> DbState {
     // Add the post to the mutable all_posts Vec.
     // ---
 
-    let user_image = rt.block_on(Image::new().create(&pool)).unwrap();
-    let user_comments: Vec<Comment> = friends
-        .iter()
-        .chain(vec![&user])
-        .map(|f| rt.block_on(Comment::new(f.id).create(&pool)).unwrap())
-        .collect();
-    let user_post = rt
-        .block_on(
-            Post::new(
-                user.id,
-                user_image.id,
-                user_comments.iter().map(|c| c.id).collect(),
-            )
-            .create(&pool),
-        )
-        .unwrap();
+    let user_image = Image::new(vec![1, 2, 3]).create(&pool).await.unwrap();
+    let user_comments: Vec<Comment> = join_all(
+        friends
+            .iter()
+            .chain(vec![&user])
+            .map(|f| async { Comment::new(f.id).create(&pool).await.unwrap() }),
+    )
+    .await;
+    let user_post = Post::new(
+        user.id,
+        user_image.id,
+        user_comments.iter().map(|c| c.id).collect(),
+    )
+    .create(&pool)
+    .await
+    .unwrap();
 
     DbState {
         user: user,

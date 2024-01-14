@@ -8,7 +8,7 @@ use super::{sql_helpers::get_pool, types::image::Image};
 
 pub async fn read_images(ids: Vec<i32>) -> Vec<Image> {
     let pool = get_pool().await;
-    let results: Vec<Result<Option<Image>, AppError>> =
+    let results: Vec<Result<Option<Image>, sqlx::Error>> =
         join_all(ids.iter().map(|id| Image::by_id(&pool, *id))).await;
 
     // ---
@@ -53,10 +53,4 @@ pub async fn read_image(id: i32) -> Result<Image, AppError> {
             id
         ))),
     }
-}
-
-pub async fn write_image(image: Image) -> Result<(), AppError> {
-    let pool = get_pool().await;
-    image.create(&pool).await?;
-    Ok(())
 }

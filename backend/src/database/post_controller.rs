@@ -2,10 +2,7 @@ use futures::future::join_all;
 use itertools::{Either, Itertools};
 use my_sqlx_crud::traits::Crud;
 
-use crate::{
-    general_helpers::{VectorTools, ENV_VARS},
-    socket_handlers::types::AppError,
-};
+use crate::socket_handlers::types::AppError;
 
 use super::{
     sql_helpers::get_pool,
@@ -91,4 +88,15 @@ pub async fn read_posts_for_users(user_ids: Vec<i32>) -> Vec<Post> {
     errors.iter().for_each(|error| println!("{:?}", error));
 
     posts
+}
+
+pub async fn create_post(image_data: Vec<u8>, poster_id: i32) -> Result<Post, AppError> {
+    let pool = get_pool().await;
+
+    let image = Image::new(image_data).create(&pool).await?;
+    let post = Post::new(poster_id, image.id, Vec::new())
+        .create(&pool)
+        .await?;
+
+    return Ok(post);
 }
