@@ -4,13 +4,15 @@ use backend::{
     self,
     database::{image_controller, post_controller, sql_helpers::get_pool, types::user::User},
     socket_handlers::types::{
-        CreateImageDTO, CreatePostDTO, InitialState, SocketEventType, SocketResponse,
+        CreateCommentDTO, CreateImageDTO, CreatePostDTO, InitialState, SocketEventType,
+        SocketResponse,
     },
 };
 use my_sqlx_crud::traits::{Crud, Schema};
 
 use crate::common::{
-    setup_database::create_simple_friendgroup, setup_socket_conn::connect_to_localhost,
+    setup_database::{create_friend_pair, create_simple_friendgroup},
+    setup_socket_conn::connect_to_localhost,
 };
 mod common;
 
@@ -179,4 +181,49 @@ async fn friend_receives_new_post() {
 
     assert_eq!(received_post.poster_id, user.id);
     assert_eq!(received_post.image.data, image_data);
+}
+
+#[tokio_shared_rt::test(shared)]
+async fn friend_receives_new_comment() {
+    let (user1, user2) = create_friend_pair().await;
+    let post = post_controller::create_post(vec![1, 2, 3], user1.id)
+        .await
+        .unwrap();
+
+    let comment_content = "this is my comment!".to_string();
+    let comment_dto = CreateCommentDTO {
+        data: comment_content.clone(),
+        post_id: post.id,
+    };
+
+    let mut user1_conn = connect_to_localhost(user1.id);
+    let mut user2_conn = connect_to_localhost(user2.id);
+
+    user1_conn.read().unwrap();
+    user2_conn.read().unwrap();
+
+    let message = SocketResponse {
+        data_type: backend::socket_handlers::types::SocketEventType::CommentCreated,
+        data: backend::socket_handlers::types::SocketData::CreateCommentDTO(comment_dto),
+    };
+
+    user1_conn
+        .send(message.serialize_for_tung_socket())
+        .unwrap();
+
+    let socket_resp = match user2_conn.read().unwrap() {
+        tungstenite::Message::Text(data) => {
+            serde_json::from_slice::<SocketResponse>(data.as_bytes()).unwrap()
+        }
+        _ => todo!(),
+    };
+
+    assert!(matches!(
+        socket_resp.data_type,
+        SocketEventType::CommentCreated
+    ));
+    let received_comment = socket_resp.data.into_comment_dto().unwrap();
+
+    assert_eq!(received_comment.data, comment_content);
+    assert_eq!(received_comment.poster_id, user1.id);
 }

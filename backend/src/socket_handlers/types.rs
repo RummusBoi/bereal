@@ -9,6 +9,7 @@ pub enum SocketEventType {
     Error,
     InitialState,
     PostCreated,
+    CommentCreated,
 }
 
 #[derive(Serialize, Deserialize, Debug, Display, EnumAsInner)]
@@ -16,6 +17,8 @@ pub enum SocketData {
     InitialState(InitialState),
     String(String),
     CreatePostDTO(CreatePostDTO),
+    CreateCommentDTO(CreateCommentDTO),
+    CommentDTO(Comment),
     PostDTO(PostDTO),
     Post(Post),
 }
@@ -99,6 +102,12 @@ pub struct PostDTO {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CreatePostDTO {
     pub image: CreateImageDTO,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CreateCommentDTO {
+    pub data: String,
+    pub post_id: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

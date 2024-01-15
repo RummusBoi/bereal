@@ -58,9 +58,9 @@ impl Post {
             post_id
         );
 
-        let new_post = sqlx::query_as::<_, Self>(&query)
-            .fetch_optional(pool)
-            .await?;
+        sqlx::query(&query).execute(pool).await?;
+        let new_post = Post::by_id(pool, post_id).await.unwrap();
+
         match new_post {
             Some(post) => Ok(post),
             None => Err(AppError::DatabaseError(format!(

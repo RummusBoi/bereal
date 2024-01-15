@@ -46,15 +46,20 @@ pub async fn read_comments(ids: Vec<i32>) -> Result<Vec<Comment>, AppError> {
     Ok(comments)
 }
 
-pub async fn write_comment(post_id: i32, comment: Comment) -> Result<Post, AppError> {
+pub async fn create_comment(
+    post_id: i32,
+    poster_id: i32,
+    content: String,
+) -> Result<Comment, AppError> {
     let pool = get_pool().await;
+    let comment = Comment::new(poster_id, content);
 
     let comment_id = comment.id;
     let comment = comment.create(&pool).await?;
     let update_result = Post::update_comment_arr_atomic(&pool, post_id, comment_id).await;
     match update_result {
         // if updating comment array on post fails, then revert the comment creation from earlier
-        Ok(post) => Ok(post),
+        Ok(_) => Ok(comment),
         Err(error) => {
             return match comment.delete(&pool).await {
                 Ok(_) => Err(error),

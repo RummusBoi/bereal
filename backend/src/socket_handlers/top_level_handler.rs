@@ -1,3 +1,4 @@
+use crate::database::comment_controller;
 use crate::database::image_controller;
 use crate::database::user_controller;
 use crate::socket_handlers::types::PostDTO;
@@ -14,6 +15,7 @@ use tokio::sync::mpsc::{self, Receiver, Sender};
 
 use crate::types::AppState;
 
+use super::types::CreateCommentDTO;
 use super::{on_subscribe::on_subscribe, types::SocketResponse};
 pub async fn top_level_socket_handler(mut socket: WebSocket, user_id: i32, state: AppState) {
     // ---
@@ -32,9 +34,9 @@ pub async fn top_level_socket_handler(mut socket: WebSocket, user_id: i32, state
 
     on_subscribe(&mut client_sender, user_id).await;
 
-    tokio::spawn(receive_internal_msgs(client_sender, internal_receiver));
+    // tokio::spawn(receive_internal_msgs(client_sender, internal_receiver));
     tokio::join!(
-        // receive_internal_msgs(client_sender, internal_receiver),
+        receive_internal_msgs(client_sender, internal_receiver),
         receive_client_msgs(internal_sender, client_receiver, user_id, state),
     );
 }
@@ -85,7 +87,15 @@ async fn receive_client_msgs(
                 )
                 .await;
             }
-            _ => panic!("Didnt expect that event type here..."),
+            super::types::SocketEventType::CommentCreated => {
+                handle_create_comment(
+                    socket_resp.data.into_create_comment_dto().unwrap(),
+                    user_id,
+                    state.clone(),
+                )
+                .await
+            }
+            _ => panic!(),
         };
     }
 }
@@ -137,4 +147,35 @@ async fn handle_create_post(post: CreatePostDTO, poster_id: i32, state: AppState
     }))
     .await;
     println!("Finished sending stuff to friends");
+}
+
+async fn handle_create_comment(comment: CreateCommentDTO, poster_id: i32, state: AppState) {
+    let created_comment =
+        comment_controller::create_comment(comment.post_id, poster_id, comment.data)
+            .await
+            .unwrap();
+
+    let user = user_controller::read_user(poster_id).await.unwrap();
+
+    let friend_conns = {
+        // NOTE: We want to hold the read lock on state.internal_conns for as short as possible, so we take the lock here, copy the sender_wrappers,
+        //          and then return them. When we go out of scope we lose the read lock, enabled writers to write.
+        let conn_lock = state.internal_conns.read().await;
+        let sender_wrappers = conn_lock
+            .iter()
+            .filter(|internal_conn| user.friends.contains(&internal_conn.user_id))
+            .map(|sender_wrapper| sender_wrapper.to_owned())
+            .collect::<Vec<SenderWrapper>>();
+        sender_wrappers
+    };
+
+    join_all(friend_conns.iter().map(|conn| {
+        println!("Sending to user {}", conn.user_id);
+
+        return conn.sender.send(SocketResponse {
+            data_type: super::types::SocketEventType::CommentCreated,
+            data: super::types::SocketData::CommentDTO(created_comment.clone()),
+        });
+    }))
+    .await;
 }

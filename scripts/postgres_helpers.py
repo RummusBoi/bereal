@@ -70,7 +70,9 @@ def run_sql_command(command: str) -> None:
     print(f"Running command {full_command}")
     exit_code = os.system(full_command)
     print(f"Exit code: {exit_code}")
-    assert exit_code == 0
+    if not exit_code == 0:
+        print("--- WARNING --- ")
+        print(f"Command return non-zero exit code ({exit_code}) ")
 
 
 def drop_table(table: str) -> None:
