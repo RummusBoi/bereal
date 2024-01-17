@@ -103,7 +103,7 @@ async fn can_send_create_post_dto() {
     //  Fetch posts made by the current user
     // ---
 
-    sleep(Duration::from_millis(10));
+    sleep(Duration::from_millis(100));
     let posts = post_controller::read_posts_for_users(vec![user.id]).await;
 
     assert_eq!(posts.len(), 1); // we have only the post just created
