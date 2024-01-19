@@ -1,18 +1,35 @@
-use crate::database::helpers::get_timestamp;
+use my_sqlx_crud::traits::Schema;
+use my_sqlx_crud_macro::SqlxCrud;
+use sqlx::Postgres;
+use sqlx::{prelude::FromRow, Pool};
 
-#[derive(Clone, Debug)]
+use crate::database::helpers::get_timestamp;
+use crate::socket_handlers::types::AppError;
+#[derive(Clone, Debug, FromRow, SqlxCrud, PartialEq)]
+#[database(Postgres)]
 pub struct User {
-    pub id: String,
-    pub friends: Vec<String>,
-    pub timestamp: u128,
+    pub id: i32,
+    pub friends: Vec<i32>,
+    pub timestamp: i64,
 }
 
 impl User {
-    pub fn new(user_id: String, friends: Vec<String>) -> User {
-        Self {
-            id: user_id,
+    pub fn random() -> Self {
+        User {
+            id: uuid::Uuid::new_v4().to_u128_le() as i32,
+            friends: vec![],
             timestamp: get_timestamp(),
-            friends: friends,
         }
+    }
+
+    pub fn new(friends: Vec<i32>) -> Self {
+        let user = User {
+            id: uuid::Uuid::new_v4().to_u128_le() as i32,
+            friends: friends,
+            timestamp: get_timestamp(),
+        };
+
+        println!("Created {:?}", user);
+        user
     }
 }

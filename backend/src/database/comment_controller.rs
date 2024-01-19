@@ -1,78 +1,84 @@
-use sqlx::postgres::PgPoolOptions;
-
-use crate::general_helpers::ENV_VARS;
+use futures::future::join_all;
+use my_sqlx_crud::traits::Crud;
 
 use super::{
-    helpers::{ensure_tables_exist, DATABASE_URL},
-    types::comment::Comment,
+    sql_helpers::get_pool,
+    types::{comment::Comment, post::Post},
 };
+use crate::socket_handlers::types::AppError;
+use itertools::{Either, Itertools};
 
-fn get_mock_data() -> Vec<Comment> {
-    return vec![
-        Comment {
-            id: "1".to_string(),
-            timestamp: 0,
-            poster_id: "rasmus".to_string(),
-            data: "hej".to_string(),
-        },
-        Comment {
-            id: "2".to_string(),
-            timestamp: 1,
-            poster_id: "jonathan".to_string(),
-            data: "jeg er dum".to_string(),
-        },
-        Comment {
-            id: "3".to_string(),
-            timestamp: 2,
-            poster_id: "anakin".to_string(),
-            data: "hej gutter".to_string(),
-        },
-    ];
+pub async fn read_comments(ids: Vec<i32>) -> Result<Vec<Comment>, AppError> {
+    let pool = get_pool().await;
+    let results: Vec<Result<Option<Comment>, AppError>> =
+        join_all(ids.iter().map(|id| Comment::by_id(&pool, *id))).await;
+
+    // ---
+    // --- Map returned results into a Vector of succesfully retrieved comments and one of errors.
+    // --- If for a given ID that comment was not found in the DB, then an error will be appended to errors.
+    // ---
+
+    let (comments, errors): (Vec<_>, Vec<_>) =
+        results
+            .into_iter()
+            .enumerate()
+            .partition_map(|(index, res)| match res {
+                Ok(c) => match c {
+                    Some(c) => Either::Left(c),
+                    None => Either::Right(AppError::DatabaseError(format!(
+                        "Comment with ID {:?} not found!",
+                        ids.get(index)
+                    ))),
+                },
+                Err(e) => Either::Right(AppError::DatabaseError(format!(
+                    "Failed when querying comment {:?}. {:?}",
+                    ids.get(index),
+                    e
+                ))),
+            });
+
+    // ---
+    // --- Log all errors. This includes errors for comments that weren't found.
+    // ---
+
+    errors.iter().for_each(|error| println!("{:?}", error));
+
+    Ok(comments)
 }
 
-pub fn read_comments(ids: Vec<String>) -> Vec<Comment> {
-    if ENV_VARS.use_mocked_database {
-        return get_mock_data()
-            .iter()
-            .filter(|comment| ids.contains(&comment.id))
-            .map(|comment| comment.clone())
-            .collect::<Vec<Comment>>();
-    } else {
-        todo!("Implement this part of the database interaction");
+pub async fn create_comment(
+    post_id: i32,
+    poster_id: i32,
+    content: String,
+) -> Result<Comment, AppError> {
+    let pool = get_pool().await;
+    let comment = Comment::new(poster_id, content);
+
+    let comment_id = comment.id;
+    let comment = comment.create(&pool).await?;
+    let update_result = Post::update_comment_arr_atomic(&pool, post_id, comment_id).await;
+    match update_result {
+        // if updating comment array on post fails, then revert the comment creation from earlier
+        Ok(_) => Ok(comment),
+        Err(error) => {
+            return match comment.delete(&pool).await {
+                Ok(_) => Err(error),
+                Err(inner_error) => {
+                    println!("{}. Failed when updating comment array on Post {}. Tried reverting creation of comment {}, but that operation failed.", inner_error, post_id, comment_id);
+                    Err(error)
+                }
+            }
+        }
     }
 }
 
-pub async fn write_comment(post_id: &String, comment: &Comment) -> Result<(), sqlx::Error> {
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(DATABASE_URL)
-        .await?;
-
-    ensure_tables_exist(&pool).await?;
-
-    sqlx::query(
-        format!(
-            "
-        insert into posts values (\'{}\', \'{}\');
-    ",
-            post_id, comment.id
-        )
-        .as_str(),
-    )
-    .execute(&pool)
-    .await?;
-
-    sqlx::query(
-        format!(
-            "
-        insert into comment values (\'{}\', \'{}\', \'{}\', \'{}\');
-    ",
-            comment.id, comment.data, comment.timestamp, comment.poster_id
-        )
-        .as_str(),
-    )
-    .execute(&pool)
-    .await?;
-
-    Ok(())
+pub async fn read_comment(id: i32) -> Result<Comment, AppError> {
+    let pool = get_pool().await;
+    match Comment::by_id(&pool, id).await? {
+        Some(c) => Ok(c),
+        None => Err(AppError::DatabaseError(format!(
+            "Could not fetch comment with ID {}",
+            id
+        ))),
+    }
 }

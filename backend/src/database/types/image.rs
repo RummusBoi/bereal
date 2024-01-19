@@ -1,25 +1,33 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-
+use my_sqlx_crud::traits::Schema;
+use my_sqlx_crud_macro::SqlxCrud;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+use sqlx::{FromRow, Pool, Postgres};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+use crate::database::helpers::get_timestamp;
+use crate::socket_handlers::types::AppError;
+
+#[derive(Clone, Debug, Serialize, Deserialize, FromRow, SqlxCrud, PartialEq)]
+#[database(Postgres)]
 pub struct Image {
-    pub id: String,
-    pub timestamp: u128,
+    pub id: i32,
+    pub timestamp: i64,
     pub data: Vec<u8>,
 }
-
 impl Image {
-    pub fn new(data: Vec<u8>) -> Image {
-        let current_time = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("wtf")
-            .as_millis();
-        Self {
-            id: Uuid::new_v4().to_string(),
-            timestamp: current_time,
-            data: data,
+    pub fn random() -> Self {
+        Image {
+            id: uuid::Uuid::new_v4().to_u128_le() as i32,
+            timestamp: get_timestamp(),
+            data: vec![1, 2, 3],
         }
+    }
+    pub fn new(data: Vec<u8>) -> Self {
+        let image = Image {
+            id: uuid::Uuid::new_v4().to_u128_le() as i32,
+            timestamp: get_timestamp(),
+            data: data,
+        };
+        println!("Created {:?}", image);
+        image
     }
 }

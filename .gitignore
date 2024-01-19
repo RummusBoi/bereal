@@ -24,3 +24,11 @@ backend/messages.json
 
 # .env file 
 *.env
+
+# local databases
+postgresql-databases/
+logfile.txt
+
+# python stuff
+venv/
+scripts/__pycache__/

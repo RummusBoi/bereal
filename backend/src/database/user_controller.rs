@@ -1,40 +1,57 @@
-use super::types::user::User;
-use crate::{general_helpers::ENV_VARS, socket_handlers::types::AppError};
+use futures::future::join_all;
+use itertools::{Either, Itertools};
+use my_sqlx_crud::traits::Crud;
+
+use super::{sql_helpers::get_pool, types::user::User};
+use crate::socket_handlers::types::AppError;
 use std::iter::Iterator;
 
-fn get_mock_data() -> Vec<User> {
-    return vec![
-        User::new(
-            "rasmus".to_string(),
-            vec!["jonathan".to_string(), "darth vader".to_string()],
-        ),
-        User::new(
-            "jonathan".to_string(),
-            vec!["rasmus".to_string(), "darth vader".to_string()],
-        ),
-        User::new(
-            "darth vader".to_string(),
-            vec!["rasmus".to_string(), "jonathan".to_string()],
-        ),
-    ];
-}
-
-pub fn read_user(id: &String) -> Result<User, AppError> {
-    read_users(&vec![id.clone()])
-        .next()
-        .and_then(|u| Some(u.clone()))
-        .ok_or(AppError::UserNotFound(id.clone()))
-}
-
-pub fn read_users(ids: &Vec<String>) -> impl Iterator<Item = User> + '_ {
-    if ENV_VARS.use_mocked_database {
-        let data = get_mock_data();
-
-        return data
-            .into_iter()
-            .filter(|user| ids.contains(&&user.id))
-            .map(|user| user.clone());
-    } else {
-        todo!("Implement this part of the database interaction");
+pub async fn read_user(id: i32) -> Result<User, AppError> {
+    let pool = get_pool().await;
+    println!("{}", id);
+    match User::by_id(&pool, id).await? {
+        Some(u) => Ok(u),
+        None => Err(AppError::DatabaseError(format!(
+            "Could not fetch user with ID {}",
+            id
+        ))),
     }
+}
+
+pub async fn read_users(ids: &Vec<i32>) -> Result<Vec<User>, AppError> {
+    let pool = get_pool().await;
+    let results: Vec<Result<Option<User>, sqlx::Error>> =
+        join_all(ids.iter().map(|id| User::by_id(&pool, *id))).await;
+
+    // ---
+    // --- Map returned results into a Vector of succesfully retrieved users and one of errors.
+    // --- If for a given ID that user was not found in the DB, then an error will be appended to errors.
+    // ---
+
+    let (users, errors): (Vec<_>, Vec<_>) =
+        results
+            .into_iter()
+            .enumerate()
+            .partition_map(|(index, res)| match res {
+                Ok(c) => match c {
+                    Some(c) => Either::Left(c),
+                    None => Either::Right(AppError::DatabaseError(format!(
+                        "User with ID {:?} not found!",
+                        ids.get(index)
+                    ))),
+                },
+                Err(e) => Either::Right(AppError::DatabaseError(format!(
+                    "Failed when querying user {:?}. {:?}",
+                    ids.get(index),
+                    e
+                ))),
+            });
+
+    // ---
+    // --- Log all errors. This includes errors for users that weren't found.
+    // ---
+
+    errors.iter().for_each(|error| println!("{:?}", error));
+
+    Ok(users)
 }
