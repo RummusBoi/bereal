@@ -19,5 +19,6 @@ pub async fn apply_post_deletion_operations(post: Post) -> Result<String, AppErr
     let query_to_remove_post = sqlx::query(Post::delete_by_id_sql()).bind(post.id);
     query_to_remove_post.execute(&mut *transaction).await?;
 
+    transaction.commit().await?;
     Ok(format!("Removed post: {:?}, removed comments: {:?}, and removed image: {:?}", post.id, post.comments, post.image))
 }
