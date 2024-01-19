@@ -1,6 +1,6 @@
 use backend::database::{
     sql_helpers::get_pool,
-    types::{comment::Comment, image::Image, post::Post, user::User},
+    types::{comment::Comment, image::Image, post::Post, user::User}, canned_queries::post_queries::apply_post_deletion_operations,
 };
 use my_sqlx_crud::traits::Crud;
 
@@ -57,4 +57,36 @@ async fn test_can_create_simple_friend_group() {
     let db_state = create_simple_friendgroup().await;
 
     assert!(db_state.posts.len() == 6);
+}
+
+// Does removing a post also remove the associated comments?
+#[tokio_shared_rt::test(shared)]
+async fn test_delete_post_deletes_associated_comments() {
+    let db_state = create_simple_friendgroup().await;
+
+    let post = match db_state.posts.first() {
+        Some(v) => v,
+        _ => {
+            println!("test_delete_post_deletes_associated_comments() couldn't find posts in db_state. Wtf???");
+            assert!("you absolute" == "bloody bastard");
+            return;
+        },
+    };
+
+    let comment_ids = &post.comments;
+
+    match apply_post_deletion_operations(post.clone()).await {
+        Ok(_) => "Hee hee!",
+        Err(_) => {
+            println!("test_delete_post_deletes_associated_comments() failed");
+            assert!("you absolute" == "bloody bastard");
+            return;
+        }
+    };
+
+    let pool = &get_pool().await;
+
+    for id in comment_ids {
+        assert_eq!(Comment::by_id(pool, *id).await.unwrap(), None);
+    }
 }

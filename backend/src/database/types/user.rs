@@ -1,14 +1,14 @@
-use my_sqlx_crud::traits::Schema;
 use my_sqlx_crud_macro::SqlxCrud;
-use sqlx::Postgres;
-use sqlx::{prelude::FromRow, Pool};
+use sqlx::prelude::FromRow;
 
 use crate::database::helpers::get_timestamp;
-use crate::socket_handlers::types::AppError;
+
+type UserId = i32;
+
 #[derive(Clone, Debug, FromRow, SqlxCrud, PartialEq)]
 #[database(Postgres)]
 pub struct User {
-    pub id: i32,
+    pub id: UserId,
     pub friends: Vec<i32>,
     pub timestamp: i64,
 }
