@@ -3,10 +3,13 @@ use my_sqlx_crud::traits::Schema;
 use my_sqlx_crud_macro::SqlxCrud;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Pool, Postgres};
+
+type PostId = i32;
+
 #[derive(Clone, Debug, Serialize, Deserialize, FromRow, SqlxCrud, PartialEq)]
 #[database(Postgres)]
 pub struct Post {
-    pub id: i32,
+    pub id: PostId,
     pub poster_id: i32,
     pub image: i32,
     pub comments: Vec<i32>,

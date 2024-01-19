@@ -1,18 +1,19 @@
-use my_sqlx_crud::traits::Schema;
 use my_sqlx_crud_macro::SqlxCrud;
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, Pool, Postgres};
+use sqlx::prelude::FromRow;
 
 use crate::database::helpers::get_timestamp;
-use crate::socket_handlers::types::AppError;
+
+type ImageId = i32;
 
 #[derive(Clone, Debug, Serialize, Deserialize, FromRow, SqlxCrud, PartialEq)]
 #[database(Postgres)]
 pub struct Image {
-    pub id: i32,
+    pub id: ImageId,
     pub timestamp: i64,
     pub data: Vec<u8>,
 }
+
 impl Image {
     pub fn random() -> Self {
         Image {

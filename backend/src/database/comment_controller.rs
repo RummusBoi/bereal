@@ -64,7 +64,7 @@ pub async fn create_comment(
             return match comment.delete(&pool).await {
                 Ok(_) => Err(error),
                 Err(inner_error) => {
-                    println!("{}. Failed when updating comment array on Post {}. Tried reverting creation of comment {}, but that operation failed.", inner_error, post_id, comment_id);
+                    println!("{}. Failed when updating comment array on Post {:?}. Tried reverting creation of comment {:?}, but that operation failed.", inner_error, post_id, comment_id);
                     Err(error)
                 }
             }

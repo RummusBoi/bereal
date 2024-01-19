@@ -7,14 +7,17 @@ use my_sqlx_crud::traits::Schema;
 use sqlx::Pool;
 use sqlx::Postgres;
 
+type CommentId = i32;
+
 #[derive(Serialize, Deserialize, Clone, Debug, sqlx::FromRow, SqlxCrud, PartialEq)]
 #[database(Postgres)]
 pub struct Comment {
-    pub id: i32,
+    pub id: CommentId,
     pub poster_id: i32,
     pub timestamp: i64,
     pub data: String,
 }
+
 impl Comment {
     pub async fn by_id(pool: &Pool<Postgres>, id: i32) -> Result<Option<Comment>, AppError> {
         let query = format!("select * from {} where id = {}", Self::table_name(), id);
