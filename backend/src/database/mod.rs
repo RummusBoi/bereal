@@ -5,3 +5,4 @@ pub mod post_controller;
 pub mod sql_helpers;
 pub mod types;
 pub mod user_controller;
+pub mod canned_queries;
