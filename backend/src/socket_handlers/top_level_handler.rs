@@ -11,6 +11,7 @@ use futures::{
     stream::{SplitSink, SplitStream},
     SinkExt, StreamExt,
 };
+use sqlx_core::database::HasStatementCache;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 
 use crate::types::AppState;
@@ -37,7 +38,7 @@ pub async fn top_level_socket_handler(mut socket: WebSocket, user_id: i32, state
     // tokio::spawn(receive_internal_msgs(client_sender, internal_receiver));
     tokio::join!(
         receive_internal_msgs(client_sender, internal_receiver),
-        receive_client_msgs(internal_sender, client_receiver, user_id, state),
+        receive_client_msgs(client_receiver, user_id, state),
     );
 }
 
@@ -60,23 +61,14 @@ async fn receive_internal_msgs(
 }
 
 async fn receive_client_msgs(
-    mut internal_sender: Sender<SocketResponse>,
     mut client_receiver: SplitStream<WebSocket>,
     user_id: i32,
     mut state: AppState,
 ) {
-    while let client_msg = client_receiver.next().await {
+    while let client_msg = client_receiver.next().await.unwrap() {
         println!("Received message from client. {:?}", client_msg);
-        let a = client_msg.unwrap();
-        let b = match a {
-            Ok(m) => m,
-            Err(e) => {
-                println!("{:?}", e);
-                panic!();
-            }
-        };
 
-        let socket_resp: SocketResponse = b.into();
+        let socket_resp: SocketResponse = client_msg.unwrap().into();
         println!("Received {:?} event!", socket_resp.data_type);
         match socket_resp.data_type {
             super::types::SocketEventType::PostCreated => {
@@ -95,16 +87,22 @@ async fn receive_client_msgs(
                 )
                 .await
             }
+            super::types::SocketEventType::FriendRequestSent => todo!(),
+            // handle_friend_request_sent(
+            //     socket_resp.data.into_create_comment_dto().unwrap(),
+            //     user_id,
+            //     state.clone(),
+            // ),
             _ => panic!(),
         };
     }
 }
 
-async fn handle_create_post(post: CreatePostDTO, poster_id: i32, state: AppState) {
+async fn handle_create_post(post: CreatePostDTO, user_id: i32, state: AppState) {
     // ---
     //  Create post in database
     // ---
-    let created_post = post_controller::create_post(post.image.data, poster_id)
+    let created_post = post_controller::create_post(post.image.data, user_id)
         .await
         .unwrap();
     let image = image_controller::read_image(created_post.image)
@@ -112,7 +110,7 @@ async fn handle_create_post(post: CreatePostDTO, poster_id: i32, state: AppState
         .unwrap();
     let post_dto = PostDTO {
         id: created_post.id,
-        poster_id,
+        poster_id: user_id,
         timestamp: created_post.timestamp as u128,
         image: image,
         comments: vec![],
@@ -120,7 +118,7 @@ async fn handle_create_post(post: CreatePostDTO, poster_id: i32, state: AppState
     // ---
     //  Find all friends of user and lookup their internal senders in app_state
     // ---
-    let user = user_controller::read_user(poster_id).await.unwrap();
+    let user = user_controller::read_user(user_id).await.unwrap();
 
     // ---
     //  Send update to all friends
@@ -149,13 +147,13 @@ async fn handle_create_post(post: CreatePostDTO, poster_id: i32, state: AppState
     println!("Finished sending stuff to friends");
 }
 
-async fn handle_create_comment(comment: CreateCommentDTO, poster_id: i32, state: AppState) {
+async fn handle_create_comment(comment: CreateCommentDTO, user_id: i32, state: AppState) {
     let created_comment =
-        comment_controller::create_comment(comment.post_id, poster_id, comment.data)
+        comment_controller::create_comment(comment.post_id, user_id, comment.data)
             .await
             .unwrap();
 
-    let user = user_controller::read_user(poster_id).await.unwrap();
+    let user = user_controller::read_user(user_id).await.unwrap();
 
     let friend_conns = {
         // NOTE: We want to hold the read lock on state.internal_conns for as short as possible, so we take the lock here, copy the sender_wrappers,
@@ -178,4 +176,13 @@ async fn handle_create_comment(comment: CreateCommentDTO, poster_id: i32, state:
         });
     }))
     .await;
+}
+
+async fn handle_friend_request_sent(target_user_id: i32, user_id: i32, state: AppState) {
+    todo!("Not implemented yet. Requires change to db tables. I think")
+    // let target_user = user_controller::read_user(target_user_id).await.unwrap();
+
+    // let conn_lock = state.internal_conns.read().await;
+
+    // let sender_wrapper = conn_lock.iter().filter(|internal_conn| internal_conn.user_id == target_user_id)
 }

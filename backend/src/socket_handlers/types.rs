@@ -10,6 +10,7 @@ pub enum SocketEventType {
     InitialState,
     PostCreated,
     CommentCreated,
+    FriendRequestSent,
 }
 
 #[derive(Serialize, Deserialize, Debug, Display, EnumAsInner)]
