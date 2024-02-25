@@ -28,12 +28,12 @@ impl TryFrom<SocketResponse> for InitialState {
     type Error = AppError;
 
     fn try_from(resp: SocketResponse) -> Result<Self, Self::Error> {
-        match resp.data_type {
+        match resp.event_type {
             SocketEventType::InitialState => (),
             _ => {
                 return Err(AppError::IncorrectSocketFormat(format!(
                     "Expected 'InitialState' event but got {}",
-                    resp.data_type
+                    resp.event_type
                 )));
             }
         };
@@ -57,7 +57,7 @@ pub enum AppError {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SocketResponse {
-    pub data_type: SocketEventType,
+    pub event_type: SocketEventType,
     pub data: SocketData,
 }
 

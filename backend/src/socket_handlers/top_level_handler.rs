@@ -63,14 +63,14 @@ async fn receive_internal_msgs(
 async fn receive_client_msgs(
     mut client_receiver: SplitStream<WebSocket>,
     user_id: i32,
-    mut state: AppState,
+    state: AppState,
 ) {
     while let client_msg = client_receiver.next().await.unwrap() {
         println!("Received message from client. {:?}", client_msg);
 
         let socket_resp: SocketResponse = client_msg.unwrap().into();
-        println!("Received {:?} event!", socket_resp.data_type);
-        match socket_resp.data_type {
+        println!("Received {:?} event!", socket_resp.event_type);
+        match socket_resp.event_type {
             super::types::SocketEventType::PostCreated => {
                 handle_create_post(
                     socket_resp.data.into_create_post_dto().unwrap(),
@@ -88,11 +88,6 @@ async fn receive_client_msgs(
                 .await
             }
             super::types::SocketEventType::FriendRequestSent => todo!(),
-            // handle_friend_request_sent(
-            //     socket_resp.data.into_create_comment_dto().unwrap(),
-            //     user_id,
-            //     state.clone(),
-            // ),
             _ => panic!(),
         };
     }
@@ -139,7 +134,7 @@ async fn handle_create_post(post: CreatePostDTO, user_id: i32, state: AppState) 
         println!("Sending to user {}", conn.user_id);
 
         return conn.sender.send(SocketResponse {
-            data_type: super::types::SocketEventType::PostCreated,
+            event_type: super::types::SocketEventType::PostCreated,
             data: super::types::SocketData::PostDTO(post_dto.clone()),
         });
     }))
@@ -171,7 +166,7 @@ async fn handle_create_comment(comment: CreateCommentDTO, user_id: i32, state: A
         println!("Sending to user {}", conn.user_id);
 
         return conn.sender.send(SocketResponse {
-            data_type: super::types::SocketEventType::CommentCreated,
+            event_type: super::types::SocketEventType::CommentCreated,
             data: super::types::SocketData::CommentDTO(created_comment.clone()),
         });
     }))

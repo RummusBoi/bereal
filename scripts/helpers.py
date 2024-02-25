@@ -16,7 +16,7 @@ class Error:
     message: str
 
 
-def build_and_run_project(build_for_release: bool = True) -> None:
+def build_and_run_project(build_for_release: bool = False) -> None:
     os.chdir("./backend")
     os.system(CARGO_RUN.format(switches="--release" if build_for_release else ""))
     os.chdir("..")

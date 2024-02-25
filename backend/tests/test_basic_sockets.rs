@@ -93,7 +93,7 @@ async fn can_send_create_post_dto() {
     socket.read().unwrap();
 
     let message = SocketResponse {
-        data_type: backend::socket_handlers::types::SocketEventType::PostCreated,
+        event_type: backend::socket_handlers::types::SocketEventType::PostCreated,
         data: backend::socket_handlers::types::SocketData::CreatePostDTO(post_dto),
     };
     socket.write(message.serialize_for_tung_socket()).unwrap();
@@ -157,7 +157,7 @@ async fn friend_receives_new_post() {
         },
     };
     let message = SocketResponse {
-        data_type: backend::socket_handlers::types::SocketEventType::PostCreated,
+        event_type: backend::socket_handlers::types::SocketEventType::PostCreated,
         data: backend::socket_handlers::types::SocketData::CreatePostDTO(post_dto),
     };
     user_conn
@@ -173,7 +173,7 @@ async fn friend_receives_new_post() {
     };
 
     assert!(matches!(
-        socket_resp.data_type,
+        socket_resp.event_type,
         SocketEventType::PostCreated
     ));
 
@@ -203,7 +203,7 @@ async fn friend_receives_new_comment() {
     user2_conn.read().unwrap();
 
     let message = SocketResponse {
-        data_type: backend::socket_handlers::types::SocketEventType::CommentCreated,
+        event_type: backend::socket_handlers::types::SocketEventType::CommentCreated,
         data: backend::socket_handlers::types::SocketData::CreateCommentDTO(comment_dto),
     };
 
@@ -219,7 +219,7 @@ async fn friend_receives_new_comment() {
     };
 
     assert!(matches!(
-        socket_resp.data_type,
+        socket_resp.event_type,
         SocketEventType::CommentCreated
     ));
     let received_comment = socket_resp.data.into_comment_dto().unwrap();
