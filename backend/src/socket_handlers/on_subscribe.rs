@@ -15,13 +15,13 @@ pub async fn on_subscribe(client_sender: &mut SplitSink<WebSocket, Message>, use
     println!("Subscribed!");
     let socket_resp = match fetch_initial_state(user_id).await {
         Ok(initial_state) => SocketResponse {
-            data_type: SocketEventType::InitialState,
+            event_type: SocketEventType::InitialState,
             data: SocketData::InitialState(initial_state),
         },
         Err(error) => {
             println!("{:?}", error);
             SocketResponse {
-                data_type: SocketEventType::Error,
+                event_type: SocketEventType::Error,
                 data: SocketData::String(format!("Failed when fetching posts. Try again later.")),
             }
         }
